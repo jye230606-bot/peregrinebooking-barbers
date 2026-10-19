@@ -1,0 +1,102 @@
+/*
+ * V Barbers — design tokens. Every colour, size, radius, curve and duration
+ * the page uses is here; components reference these names only.
+ *
+ * Dark, soft and lit from behind: near-black ground, quiet grey surfaces, one
+ * neo-grotesk set tight, and Vance's electric blue (sampled from the LED
+ * backlight in his posts) as the light source. Text on blue is always black.
+ */
+
+:root {
+  /* Palette */
+  --vb-black: #050505;
+  --vb-ink: #0b0b0b;
+  --vb-surface: #131313;
+  --vb-surface-2: #1b1b1b;
+  --vb-surface-3: #242424;
+  --vb-line: #262626;
+  --vb-white: #f5f5f2;
+  --vb-grey: #8c8c8c;
+  --vb-grey-dim: #4a4a4a;
+  --vb-blue: #08c8f0;
+  --vb-blue-deep: #0a5cff;
+  --vb-blue-core: #e6fbff;
+
+  /* Roles */
+  --c-bg: var(--vb-black);
+  --c-fg: var(--vb-white);
+  --c-muted: var(--vb-grey);
+  --c-faint: var(--vb-grey-dim);
+  --c-surface: var(--vb-surface);
+  --c-surface-2: var(--vb-surface-2);
+  --c-surface-3: var(--vb-surface-3);
+  --c-line: var(--vb-line);
+  --c-accent: var(--vb-blue);
+  --c-on-accent: var(--vb-black);
+  --c-glow-a: var(--vb-blue);
+  --c-glow-b: var(--vb-blue-deep);
+  --c-glow-core: var(--vb-blue-core);
+
+  /* Type */
+  --font-sans: var(--font-inter-tight), "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sans);
+
+  --fs-micro: 11px;
+  --fs-label: 13px;
+  --fs-body: 15px;
+  --fs-input: 16px; /* 16px stops iOS zooming into a field */
+  --fs-lead: clamp(20px, 2.2vw, 26px);
+  --fs-day: 22px;
+  --fs-service: clamp(26px, 6.4vw, 40px);
+  --fs-time: 22px;
+  --fs-title: clamp(30px, 6vw, 44px);
+  --fs-step: clamp(24px, 4.4vw, 32px);
+  --fs-section: clamp(40px, 9vw, 96px);
+  --fs-hero: clamp(110px, 33vw, 420px);
+  --lh-tight: 0.92;
+  --lh-snug: 1.05;
+  --lh-body: 1.5;
+  --track-hero: -0.06em;
+  --track-display: -0.04em;
+  --track-tight: -0.02em;
+  --weight-display: 500;
+
+  /* Shape */
+  --radius-xs: 10px;
+  --radius-sm: 14px;
+  --radius: 20px;
+  --radius-lg: 28px;
+  --radius-xl: 36px;
+  --radius-pill: 999px;
+  --border: 1px;
+  --focus: 2px;
+
+  /* Space */
+  --tap: 52px;
+  --gutter: 16px;
+  --gap: 10px;
+  --gap-tight: 6px;
+  --pad: 20px;
+  --pad-lg: 28px;
+  --section-gap: clamp(72px, 14vw, 160px);
+  --max-width: 760px;
+  --max-wide: 1240px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* expo out: arrivals */
+  --ease-std: cubic-bezier(0.2, 0, 0, 1); /* standard: state changes */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); /* scroll, travel */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* press, select */
+  --dur-fast: 180ms;
+  --dur: 320ms;
+  --dur-slow: 700ms;
+  --dur-reveal: 1100ms;
+
+  /* Glow */
+  --glow-blur: 70px;
+
+  /* Intro */
+  --intro-liquid: var(--vb-blue);
+  --intro-type: var(--vb-white);
+  --intro-type-wet: var(--vb-black);
+}

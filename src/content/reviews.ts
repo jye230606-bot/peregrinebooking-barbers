@@ -1,0 +1,198 @@
+/**
+ * The 16 Booksy reviews, imported verbatim on 19 October 2026: spelling, emoji
+ * and lower case exactly as written. Never edit, correct, reorder by preference
+ * or add to these. `supabase/seed.sql` carries the same rows; a test keeps the
+ * two in step. `body: null` is a rating-only review.
+ */
+
+export type Review = {
+  id: string
+  author: string
+  rating: 1 | 2 | 3 | 4 | 5
+  body: string | null
+  service: string
+  reviewedOn: string
+  source: 'booksy'
+  /** Booksy marks every one "Confirmed client", with Vance as the staffer. */
+  confirmedClient: true
+  staffer: 'Vance'
+}
+
+export const reviews: Review[] = [
+  {
+    id: "8ff6a0d2-cba8-592b-9fe1-3fe1b12c3ba4",
+    author: "Jason",
+    rating: 5,
+    body: null,
+    service: "Haircut",
+    reviewedOn: "2026-09-30",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+  {
+    id: "7de5e0a7-2839-5044-a075-a22cb2fabe41",
+    author: "James",
+    rating: 5,
+    body: null,
+    service: "Haircut",
+    reviewedOn: "2026-09-28",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+  {
+    id: "5c9c0b08-e510-54d9-99ba-f02c6de66138",
+    author: "xavier",
+    rating: 5,
+    body: "Vbarbers has been my barber for many years now. I don’t normally leave reviews but his attention to details, skils and cognitive ability to understand his customers needs leaves me satisfied everytime. Thank you Vance.",
+    service: "Haircut",
+    reviewedOn: "2026-09-24",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+  {
+    id: "27f36974-f38e-55a2-8140-5e38876887ae",
+    author: "Ethan",
+    rating: 5,
+    body: null,
+    service: "Haircut",
+    reviewedOn: "2026-09-12",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+  {
+    id: "e81de458-3448-57e1-9c56-ccd6ae53da41",
+    author: "kai",
+    rating: 5,
+    body: "cleaned up my clapped head,",
+    service: "Haircut",
+    reviewedOn: "2026-08-26",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+  {
+    id: "3cf13903-77fc-50e7-8df1-074d33953104",
+    author: "Will",
+    rating: 5,
+    body: "10/10",
+    service: "Haircut",
+    reviewedOn: "2026-08-21",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+  {
+    id: "bced4d22-8189-5872-aebc-b571271dede7",
+    author: "James",
+    rating: 5,
+    body: "Most ripper trim in world",
+    service: "Haircut",
+    reviewedOn: "2026-08-10",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+  {
+    id: "d6a40e67-85f8-5524-9258-81ae9a9c255b",
+    author: "Jason",
+    rating: 5,
+    body: "Unbelievable haircut, can’t remember the last time I was this happy w a haircut.",
+    service: "Haircut",
+    reviewedOn: "2026-05-29",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+  {
+    id: "6965cc67-c2dd-5e4f-a569-85e822e3e18b",
+    author: "Oliver",
+    rating: 5,
+    body: "Great cut. Definitely be going again.",
+    service: "Haircut",
+    reviewedOn: "2026-03-03",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+  {
+    id: "79e67c84-b09e-5f97-bc5e-01e0da4eeb23",
+    author: "xavier",
+    rating: 5,
+    body: "Best barber i’ve been too",
+    service: "Haircut",
+    reviewedOn: "2026-01-22",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+  {
+    id: "55e94139-2bef-51e5-bcf2-e4ccb2344cef",
+    author: "Isaac",
+    rating: 5,
+    body: "Couldn’t get girls to leave me alone 10/10",
+    service: "Haircut",
+    reviewedOn: "2025-12-17",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+  {
+    id: "91312965-668e-5727-b8ac-0603d23781b9",
+    author: "Jack",
+    rating: 5,
+    body: "The best of the best",
+    service: "Haircut",
+    reviewedOn: "2025-12-03",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+  {
+    id: "9c97e87d-8b1a-5621-8a39-1a4ce815421a",
+    author: "Charles",
+    rating: 5,
+    body: "high skilled barber and great dude, will definitely be returning",
+    service: "Haircut",
+    reviewedOn: "2025-11-25",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+  {
+    id: "46d3c9db-3c69-56b8-b9c8-1a4fed0250a4",
+    author: "Pranay",
+    rating: 5,
+    body: "Best barber",
+    service: "Haircut",
+    reviewedOn: "2025-10-14",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+  {
+    id: "d1f0da26-2856-56ba-bf57-41c12f14c3bf",
+    author: "Joanne",
+    rating: 5,
+    body: "Superb haircut and fixed up my beard real nice 🔥🔥🔥",
+    service: "Haircut + beard",
+    reviewedOn: "2025-08-27",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+  {
+    id: "662350d5-4264-50b3-a562-ce88f60b3e74",
+    author: "Luca",
+    rating: 5,
+    body: "Great barber",
+    service: "Haircut",
+    reviewedOn: "2025-08-02",
+    source: 'booksy',
+    confirmedClient: true,
+    staffer: 'Vance',
+  },
+]
