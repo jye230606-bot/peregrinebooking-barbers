@@ -1,13 +1,11 @@
 import { fullAddress, tenant } from "@/config/tenant";
-import { reviews } from "@/content/reviews";
-import { BookButton } from "./Actions";
 import { Hours } from "./Hours";
 import { Mark } from "./Mark";
 import { Reveal, WordsReveal } from "./Motion";
 
 /**
  * Finding him and when: the map, the address, the hours and special dates,
- * staff, payment and Instagram. Facts only. Then the footer.
+ * payment and Instagram. Facts only. Then the footer.
  */
 
 export function Info() {
@@ -51,32 +49,14 @@ export function Info() {
             <Hours />
           </Reveal>
 
-          <Reveal className="vb-block vb-stack vb-barber" index={2}>
-            <h3 className="vb-card-title">Staff</h3>
-            <div className="vb-barber-row">
-              <span className="vb-barber-avatar" aria-hidden="true">
-                <Mark />
-              </span>
-              <div>
-                <p className="vb-lead" style={{ margin: 0 }}>
-                  {tenant.barber}
-                </p>
-                <p className="vb-muted" style={{ margin: 0 }}>
-                  {reviews.length} reviews
-                </p>
-              </div>
-            </div>
-            <BookButton className="vb-btn vb-btn-ghost vb-btn-center" label="Book" />
-          </Reveal>
-
-          <Reveal className="vb-block vb-stack" index={3}>
+          <Reveal className="vb-block vb-stack" index={2}>
             <h3 className="vb-card-title">Payment</h3>
             <p className="vb-lead" style={{ margin: 0 }}>
               {tenant.payment}
             </p>
           </Reveal>
 
-          <Reveal className="vb-block vb-stack" index={4}>
+          <Reveal className="vb-block vb-stack" index={3}>
             <h3 className="vb-card-title">Instagram</h3>
             <a className="vb-btn vb-btn-ghost vb-btn-center" href={`https://www.instagram.com/${tenant.instagram}/`} target="_blank" rel="noopener noreferrer">
               @{tenant.instagram} <span className="vb-btn-arrow" aria-hidden="true">↗</span>
@@ -93,6 +73,12 @@ export function Info() {
           {tenant.name} · {fullAddress()} ·{" "}
           <a href={`https://www.instagram.com/${tenant.instagram}/`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--c-fg)" }}>
             @{tenant.instagram}
+          </a>
+        </p>
+        <p className="vb-powered">
+          Powered by{" "}
+          <a href="https://www.peregrinepartners.space" target="_blank" rel="noopener">
+            PeregrineOffice
           </a>
         </p>
       </footer>

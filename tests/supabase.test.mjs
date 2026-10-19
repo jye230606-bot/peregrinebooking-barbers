@@ -33,6 +33,10 @@ function fakePostgrest() {
     const table = new URL(url).pathname.split("/").pop();
     const p = params(url);
     calls.push({ table, method, body, url: String(url) });
+    // Every call must target the vbarbers schema, never public.
+    if (init.headers?.["Accept-Profile"] !== "vbarbers" || init.headers?.["Content-Profile"] !== "vbarbers") {
+      return respond(404, { code: "PGRST106", message: "wrong schema" });
+    }
     await delay();
 
     if (table === "tenants") return respond(200, eq(p, "slug") === "vbarbers" ? [{ id: TENANT_ID }] : []);

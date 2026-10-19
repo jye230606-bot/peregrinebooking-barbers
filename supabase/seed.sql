@@ -7,14 +7,14 @@
 
 begin;
 
-insert into public.tenants (slug, name, timezone)
+insert into vbarbers.tenants (slug, name, timezone)
 values ('vbarbers', 'V Barbers', 'Australia/Melbourne')
 on conflict (slug) do update set name = excluded.name, timezone = excluded.timezone;
 
 -- Services
-insert into public.services (id, tenant_id, name, duration_min, price_cents, active, sort)
+insert into vbarbers.services (id, tenant_id, name, duration_min, price_cents, active, sort)
 select v.id::uuid, t.id, v.name, v.duration_min, v.price_cents, true, v.sort
-from public.tenants t,
+from vbarbers.tenants t,
   (values
     ('74cdb172-7b61-5260-9f17-9e6d24c2e17d', 'Haircut', 45, 5000, 1),
     ('25ff47d7-538d-59d3-85ae-02c77364f6c2', 'Haircut + beard', 60, 6000, 2)
@@ -24,9 +24,9 @@ on conflict (id) do update set name = excluded.name, duration_min = excluded.dur
   price_cents = excluded.price_cents, active = excluded.active, sort = excluded.sort;
 
 -- Weekly hours, Australia/Melbourne. Sunday (0) and Monday (1) closed: no rows.
-insert into public.weekly_hours (id, tenant_id, weekday, open_local, close_local)
+insert into vbarbers.weekly_hours (id, tenant_id, weekday, open_local, close_local)
 select v.id::uuid, t.id, v.weekday, v.open_local::time, v.close_local::time
-from public.tenants t,
+from vbarbers.tenants t,
   (values
     ('ce04366e-d279-58a6-9a45-4c0e70820bd7', 2, '10:00', '18:15'),
     ('e5135264-9636-5a71-b6cb-e4d8dd3c2376', 3, '10:00', '18:15'),
@@ -39,16 +39,16 @@ on conflict (id) do update set weekday = excluded.weekday, open_local = excluded
   close_local = excluded.close_local;
 
 -- Date overrides: closed 5–9 November 2026.
-insert into public.date_overrides (tenant_id, date, closed, note)
+insert into vbarbers.date_overrides (tenant_id, date, closed, note)
 select t.id, d::date, true, null
-from public.tenants t, unnest(array['2026-11-05', '2026-11-06', '2026-11-07', '2026-11-08', '2026-11-09']) as d
+from vbarbers.tenants t, unnest(array['2026-11-05', '2026-11-06', '2026-11-07', '2026-11-08', '2026-11-09']) as d
 where t.slug = 'vbarbers'
 on conflict (tenant_id, date) do update set closed = true, open_local = null, close_local = null;
 
 -- Reviews: all 16 from Booksy, verbatim. 5.0 from 16, all with Vance.
-insert into public.reviews (id, tenant_id, author_name, rating, body, service_name, reviewed_on, source)
+insert into vbarbers.reviews (id, tenant_id, author_name, rating, body, service_name, reviewed_on, source)
 select v.id::uuid, t.id, v.author_name, 5, v.body, v.service_name, v.reviewed_on::date, 'booksy'
-from public.tenants t,
+from vbarbers.tenants t,
   (values
     ('8ff6a0d2-cba8-592b-9fe1-3fe1b12c3ba4', 'Jason', null, 'Haircut', '2026-09-30'),
     ('7de5e0a7-2839-5044-a075-a22cb2fabe41', 'James', null, 'Haircut', '2026-09-28'),

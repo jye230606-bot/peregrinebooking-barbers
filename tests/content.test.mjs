@@ -54,16 +54,17 @@ test("seed.sql carries the services, hours and overrides in tenant.ts", async ()
   for (const o of tenant.overrides) assert.ok(seed.includes(`'${o.date}'`), o.date);
 });
 
-test("the migration is additive and keeps every table tenant-scoped and RLS-locked", async () => {
+test("the migration is additive, stays in the vbarbers schema, and keeps every table tenant-scoped and RLS-locked", async () => {
   const dir = path.join(root, "supabase/migrations");
   const [file] = await readdir(dir);
   const sql = await readFile(path.join(dir, file), "utf8");
   assert.doesNotMatch(sql, /\b(drop|alter\s+table\s+\S+\s+(drop|rename|alter)|rename|truncate)\b/i);
-  const tables = [...sql.matchAll(/create table public\.(\w+)/g)].map((m) => m[1]);
+  assert.doesNotMatch(sql, /\bpublic\./, "nothing in public: it already holds other clients' tables");
+  const tables = [...sql.matchAll(/create table vbarbers\.(\w+)/g)].map((m) => m[1]);
   assert.deepEqual(tables.sort(), ["blocks", "bookings", "customers", "date_overrides", "reviews", "services", "tenants", "weekly_hours"]);
   for (const t of tables) {
-    assert.match(sql, new RegExp(`alter table public\\.${t}\\s+enable row level security`), `${t} RLS`);
-    if (t !== "tenants") assert.match(sql, new RegExp(`create table public\\.${t} \\([^;]*tenant_id\\s+uuid not null`, "s"), `${t} tenant_id`);
+    assert.match(sql, new RegExp(`alter table vbarbers\\.${t}\\s+enable row level security`), `${t} RLS`);
+    if (t !== "tenants") assert.match(sql, new RegExp(`create table vbarbers\\.${t} \\([^;]*tenant_id\\s+uuid not null`, "s"), `${t} tenant_id`);
   }
   assert.doesNotMatch(sql, /create policy/i);
   assert.match(sql, /exclude using gist \(\s*tenant_id with =,\s*tstzrange\(starts_at, blocked_until\) with &&\s*\) where \(status = 'confirmed'\)/);

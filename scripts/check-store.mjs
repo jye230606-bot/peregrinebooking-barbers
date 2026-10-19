@@ -13,7 +13,7 @@
  * come back as a clean SlotTaken from the exclusion constraint.
  */
 import nextEnv from "@next/env";
-import { supabaseStore } from "../src/booking/server/supabaseStore.ts";
+import { SCHEMA, supabaseStore } from "../src/booking/server/supabaseStore.ts";
 import { SlotTaken } from "../src/booking/server/store.ts";
 
 nextEnv.loadEnvConfig(process.cwd());
@@ -26,7 +26,13 @@ if (!url?.startsWith("https://") || !key) {
 
 const SLUG = "vbarbers-selftest";
 const rest = `${url}/rest/v1`;
-const headers = { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
+const headers = {
+  apikey: key,
+  Authorization: `Bearer ${key}`,
+  "Content-Type": "application/json",
+  "Accept-Profile": SCHEMA,
+  "Content-Profile": SCHEMA,
+};
 
 async function call(path, init = {}) {
   const res = await fetch(`${rest}/${path}`, { ...init, headers: { ...headers, ...init.headers } });

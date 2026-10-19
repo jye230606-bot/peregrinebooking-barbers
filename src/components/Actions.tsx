@@ -1,27 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { openBooking } from "./BookingSheet";
 
 /** The small client-side buttons the server-rendered profile needs. */
-
-export function BookButton({
-  serviceId,
-  label = "Book",
-  className = "vb-pill",
-  children,
-}: {
-  serviceId?: string;
-  label?: string;
-  className?: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <button type="button" className={className} onClick={() => openBooking(serviceId)} aria-label={label}>
-      {children ?? label}
-    </button>
-  );
-}
 
 /** Share the page: the phone's own sheet where there is one, else copy the link. */
 export function ShareButton({ title }: { title: string }) {

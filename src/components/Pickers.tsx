@@ -2,13 +2,20 @@
 
 import type { DateKey, Service } from "@/config/tenant";
 import { bookingWindow, gridStarts, openingOn } from "@/booking/rules";
-import { dateLabel, shiftDays, timeLabel, weekdayName, weekdayOf, weekdayShort } from "@/booking/time";
+import { dateLabel, shiftDays, shopMinutes, timeLabel, weekdayName, weekdayOf, weekdayShort } from "@/booking/time";
 
 /**
  * The date grid and the time grid, shared by the booking flow and the
  * manage page. Both use the rules module the server enforces, so a day or a
  * time offered here is one the server will accept unless the diary changed.
  */
+
+// Times are split by the shop's clock: before noon, before 5pm, after.
+const PARTS = [
+  { name: "Morning", until: 12 * 60 },
+  { name: "Afternoon", until: 17 * 60 },
+  { name: "Evening", until: 24 * 60 },
+];
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const WEEK = [1, 2, 3, 4, 5, 6, 0]; // Monday first
@@ -97,26 +104,42 @@ export function TimeGrid({
     );
   }
 
+  const groups = PARTS.map((part, p) => ({
+    name: part.name,
+    times: all.filter((t) => {
+      const m = shopMinutes(t);
+      return m < part.until && (p === 0 || m >= PARTS[p - 1].until);
+    }),
+  })).filter((g) => g.times.length > 0);
+
+  let i = 0; // one stagger across all groups
   return (
-    <div className="vb-times" role="group" aria-label={`Times on ${dateLabel(date)}`}>
-      {all.map((t, i) => {
-        const iso = t.toISOString();
-        const available = freeSet.has(iso);
-        return (
-          <button
-            key={iso}
-            type="button"
-            className="vb-btn vb-rise"
-            style={{ "--i": i } as React.CSSProperties}
-            disabled={!available}
-            aria-pressed={value === iso}
-            aria-label={`${timeLabel(t)}${available ? "" : ", unavailable"}`}
-            onClick={() => onChange(iso)}
-          >
-            {timeLabel(t)}
-          </button>
-        );
-      })}
+    <div className="vb-time-groups">
+      {groups.map((g) => (
+        <div key={g.name} className="vb-time-group">
+          <h3 className="vb-label vb-time-group-h">{g.name}</h3>
+          <div className="vb-times" role="group" aria-label={`${g.name} times on ${dateLabel(date)}`}>
+            {g.times.map((t) => {
+              const iso = t.toISOString();
+              const available = freeSet.has(iso);
+              return (
+                <button
+                  key={iso}
+                  type="button"
+                  className="vb-btn vb-rise"
+                  style={{ "--i": i++ } as React.CSSProperties}
+                  disabled={!available}
+                  aria-pressed={value === iso}
+                  aria-label={`${timeLabel(t)}${available ? "" : ", unavailable"}`}
+                  onClick={() => onChange(iso)}
+                >
+                  {timeLabel(t)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

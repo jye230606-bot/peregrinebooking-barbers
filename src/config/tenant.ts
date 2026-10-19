@@ -39,7 +39,6 @@ export type TenantConfig = {
   booksy: string
   /** As Booksy shows it: the handle, and the tag under the rating. */
   booksyName: string
-  booksyTag: string
   payment: string
   services: Service[]
   /** Index 0 is Sunday. `null` is closed all day. */
@@ -63,7 +62,6 @@ export const tenant: TenantConfig = {
   instagram: 'vbarbersz',
   booksy: 'vbarbersz',
   booksyName: 'vbarbersz',
-  booksyTag: 'Entrepreneur',
   payment: 'Pay by PayID or cash at your appointment.',
 
   services: [

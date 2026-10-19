@@ -1,16 +1,12 @@
 import { fullAddress, tenant } from "@/config/tenant";
 import { reviews } from "@/content/reviews";
-import { BookButton, ShareButton } from "./Actions";
-import { money } from "./client-api";
-import { ParallaxPhoto, Reveal, WordsReveal } from "./Motion";
+import { ShareButton } from "./Actions";
+import { ParallaxPhoto, Reveal } from "./Motion";
 
 /**
- * Who, where and what — everything the top of his Booksy page says: the
- * photo, the name and address, the rating and its tag, sharing, and the
- * services with their prices, each with its own Book button.
+ * Who and where: the photo, the name and address, the rating, sharing and
+ * directions. Services and prices live in the booking sheet.
  */
-
-const duration = (min: number) => (min % 60 === 0 ? `${min / 60}h` : min > 60 ? `${Math.floor(min / 60)}h ${min % 60}min` : `${min}min`);
 
 export function Profile() {
   const average = (reviews.reduce((n, r) => n + r.rating, 0) / reviews.length).toFixed(1);
@@ -41,7 +37,6 @@ export function Profile() {
               <strong>{average}</strong>
               <span className="vb-muted">· {reviews.length} reviews</span>
             </a>
-            <span className="vb-chip">{tenant.booksyTag}</span>
           </div>
         </Reveal>
         <Reveal className="vb-profile-actions" index={2}>
@@ -56,28 +51,6 @@ export function Profile() {
         </Reveal>
       </div>
 
-      <div className="vb-services" id="services">
-        <div className="vb-section-head" style={{ marginBottom: "clamp(20px, 4vw, 36px)" }}>
-          <WordsReveal className="vb-section-title" parts={[{ text: "Services" }]} />
-        </div>
-        <Reveal className="vb-service-list" index={1}>
-          <p className="vb-label vb-service-group">Popular services</p>
-          <ul>
-            {tenant.services.map((s, i) => (
-              <li key={s.id} className="vb-service-row" style={{ "--i": i } as React.CSSProperties}>
-                <div className="vb-service-info">
-                  <span className="vb-service-name">{s.name}</span>
-                  <span className="vb-muted">{duration(s.durationMin)}</span>
-                </div>
-                <span className="vb-service-cost">{money(s.priceCents)}</span>
-                <BookButton serviceId={s.id} label={`Book ${s.name}`}>
-                  Book
-                </BookButton>
-              </li>
-            ))}
-          </ul>
-        </Reveal>
-      </div>
     </section>
   );
 }

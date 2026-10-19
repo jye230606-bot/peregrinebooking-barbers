@@ -1,6 +1,9 @@
 import type { Block, Booking, BookingStatus } from '../types.ts'
 import { SlotTaken, type BookingStore } from './store.ts'
 
+/** The Postgres schema V Barbers' tables live in, beside other clients'. */
+export const SCHEMA = 'vbarbers'
+
 /**
  * Peregrine's shared Supabase, over PostgREST, as the service role. Server
  * only: the key bypasses row-level security, which is deny-all for everyone
@@ -77,6 +80,9 @@ export function supabaseStore({ url, serviceKey, tenantSlug, fetcher = (...a) =>
     apikey: serviceKey,
     Authorization: `Bearer ${serviceKey}`,
     'Content-Type': 'application/json',
+    // PostgREST reads from and writes to this schema, not `public`.
+    'Accept-Profile': SCHEMA,
+    'Content-Profile': SCHEMA,
   }
   const q = encodeURIComponent
 
