@@ -11,10 +11,13 @@ import { scrollToEl, useIntroDone, useScrollVar, WordsReveal } from "./Motion";
 
 /**
  * The top of the page: a floating bar, the name and address, a trimmer that
- * buzzes across to reveal the booking button, and his name set enormous with
+ * buzzes across to reveal the booking button, and the shop's name set enormous with
  * electric-blue light breathing behind it. The light trails the
  * pointer, and the whole stage sinks and dims as the page scrolls.
  */
+
+// The word set enormous at the foot of the hero: the shop, not the barber.
+const HERO_WORD = "VBARBERS";
 
 const melbourneClock = new Intl.DateTimeFormat("en-AU", {
   timeZone: tenant.timezone,
@@ -111,10 +114,7 @@ export function Hero() {
           as="h1"
           mode="intro"
           className="vb-hero-copy"
-          parts={[
-            { text: `${tenant.booksyName} ` },
-            { text: fullAddress(), muted: true },
-          ]}
+          parts={[{ text: fullAddress(), muted: true }]}
         />
       </div>
 
@@ -142,10 +142,10 @@ export function Hero() {
           <i />
         </div>
         <p className="vb-hero-word vb-hero-dim" aria-hidden="true">
-          {tenant.barber.toUpperCase()}
+          {HERO_WORD}
         </p>
         <p className="vb-hero-word vb-hero-lit" aria-hidden="true">
-          {tenant.barber.toUpperCase()}
+          {HERO_WORD}
         </p>
         <div className="vb-grain" aria-hidden="true" />
         <div className="vb-hero-fade" aria-hidden="true" />

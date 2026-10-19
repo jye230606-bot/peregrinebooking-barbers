@@ -820,7 +820,7 @@ html.js .vb-hero:not([data-go]) .vb-hero-enter {
   left: 50%;
   width: max-content;
   margin: 0;
-  font-size: min(calc((100vw - 2 * var(--gutter)) / 2.8), 62svh);
+  font-size: min(calc((100vw - 2 * var(--gutter)) / 4.7), 62svh); /* sized so VBARBERS spans the width */
   font-weight: var(--weight-display);
   letter-spacing: var(--track-hero);
   line-height: 0.78;

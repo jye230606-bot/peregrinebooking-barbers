@@ -163,7 +163,7 @@ test("two parallel inserts for the same slot: exactly one succeeds, the other ge
   // Both requests read an empty diary and pass every rule; only the database can choose.
   const body = (n) => ({
     serviceId: HAIRCUT.id,
-    startsAt: at(TUESDAY, "15:00").toISOString(),
+    startsAt: at(TUESDAY, "15:15").toISOString(),
     name: `Racer ${n}`,
     phone: `041200000${n}`,
     email: `racer${n}@example.com`,

@@ -111,14 +111,15 @@ test("a booking stands with no mailer configured", async () => {
 });
 
 test("the server re-checks every rule, whatever the client sent", async () => {
-  assert.equal((await book("17:45")).body.code, "after-close");
+  assert.equal((await book("18:15")).body.code, "after-close");
   assert.equal((await book("10:10")).body.code, "outside-hours");
+  assert.equal((await book("10:15")).body.code, "outside-hours"); // off the 45-minute grid
   assert.equal((await handle(req("POST", "/bookings", { body: { ...guest(), startsAt: at("2026-10-19", "08:00").toISOString() } }), config)).body.code, "past");
   assert.equal((await handle(req("POST", "/bookings", { body: { ...guest(), startsAt: at("2026-11-06", "10:00").toISOString() } }), config)).body.code, "closed");
   assert.equal((await handle(req("POST", "/bookings", { body: { ...guest(), serviceId: "nope" } }), config)).body.code, "bad-service");
   assert.equal((await book("10:00", { email: "" })).status, 400);
   // A client can't set its own status, price or source.
-  const sneaky = await book("11:00", { status: "completed", priceCentsSnapshot: 1, source: "owner" });
+  const sneaky = await book("11:30", { status: "completed", priceCentsSnapshot: 1, source: "owner" });
   assert.equal(sneaky.status, 201);
   assert.equal(sneaky.body.booking.status, "confirmed");
   assert.equal(sneaky.body.booking.priceCents, 5000);
@@ -126,13 +127,13 @@ test("the server re-checks every rule, whatever the client sent", async () => {
 
 test("a second booking for the same slot gets a clean 'taken'", async () => {
   assert.equal((await book("10:00")).status, 201);
-  const again = await book("10:15");
+  const again = await book("10:00", { email: "b@example.com", phone: "0412000111" });
   assert.equal(again.status, 409);
   assert.equal(again.body.code, "taken");
 });
 
 test("two guests racing for one slot: exactly one is confirmed", async () => {
-  const results = await Promise.all(Array.from({ length: 8 }, () => book("14:00")));
+  const results = await Promise.all(Array.from({ length: 8 }, () => book("14:30")));
   assert.equal(results.filter((r) => r.status === 201).length, 1);
   assert.ok(results.filter((r) => r.status !== 201).every((r) => r.status === 409 && r.body.code === "taken"));
 });
@@ -148,7 +149,7 @@ test("the manage token opens its own booking only", async () => {
 
   assert.equal((await handle(req("GET", `/bookings/${id}`, { query: { t: "wrong" } }), config)).status, 404);
   assert.equal((await handle(req("GET", `/bookings/${id}`), config)).status, 404);
-  const other = await book("12:00");
+  const other = await book("12:15");
   assert.equal((await handle(req("GET", `/bookings/${other.body.booking.id}`, { query: { t: token } }), config)).status, 404);
 
   const ics = await handle(req("GET", `/bookings/${id}/ics`, { query: { t: token } }), config);
@@ -172,7 +173,7 @@ test("a guest can cancel before the cutoff, which frees the slot", async (t) => 
 });
 
 test("inside 12 hours, cancel and reschedule refuse and point to Vance", async (t) => {
-  const res = await book("12:00");
+  const res = await book("12:15");
   const { id } = res.body.booking;
   const token = tokenOf(res);
   t.mock.timers.setTime(at(TUESDAY, "00:30").getTime());
@@ -180,7 +181,7 @@ test("inside 12 hours, cancel and reschedule refuse and point to Vance", async (
   assert.equal(cancel.status, 403);
   assert.equal(cancel.body.code, "cutoff");
   assert.match(cancel.body.error, /@vbarbersz/);
-  const move = await handle(req("POST", `/bookings/${id}/reschedule`, { body: { t: token, startsAt: at(TUESDAY, "15:00").toISOString() } }), config);
+  const move = await handle(req("POST", `/bookings/${id}/reschedule`, { body: { t: token, startsAt: at(TUESDAY, "15:15").toISOString() } }), config);
   assert.equal(move.status, 403);
 });
 
@@ -191,12 +192,14 @@ test("a guest can reschedule to a free time, checked like a new booking", async 
   const token = tokenOf(res);
   const move = (hhmm) => handle(req("POST", `/bookings/${id}/reschedule`, { body: { t: token, startsAt: at(TUESDAY, hhmm).toISOString() } }), config);
 
-  assert.equal((await move("12:30")).body.code, "taken"); // runs into 13:00
-  assert.equal((await move("17:45")).body.code, "after-close");
-  const ok = await move("10:15"); // overlaps only itself
+  assert.equal((await move("13:00")).body.code, "taken");
+  assert.equal((await move("18:15")).body.code, "after-close");
+  assert.equal((await move("10:15")).body.code, "outside-hours"); // off the grid
+  const ok = await move("10:45"); // ends 11:30, clear of 13:00
   assert.equal(ok.status, 200);
-  assert.equal(ok.body.startsAt, at(TUESDAY, "10:15").toISOString());
-  assert.equal(ok.body.endsAt, at(TUESDAY, "11:00").toISOString());
+  assert.equal(ok.body.startsAt, at(TUESDAY, "10:45").toISOString());
+  assert.equal(ok.body.endsAt, at(TUESDAY, "11:30").toISOString());
+  assert.equal((await move("10:00")).status, 200); // and back into the slot it left
 });
 
 test("mutations must be JSON", async () => {
@@ -252,13 +255,13 @@ test("the owner sees the diary, cancels, blocks time and books by hand", async (
   assert.equal((await handle(req("POST", "/owner/blocks", { body: { date: TUESDAY, from: "10:30", to: "11:00" }, cookie }), config)).status, 409);
   const block = await handle(req("POST", "/owner/blocks", { body: { date: TUESDAY, from: "13:00", to: "14:00", reason: "Lunch" }, cookie }), config);
   assert.equal(block.status, 201);
-  assert.equal((await book("13:15", { email: "x@example.com" })).body.code, "blocked");
+  assert.equal((await book("13:00", { email: "x@example.com" })).body.code, "blocked");
 
   // A manual booking may skip the notice period, and needs no email.
   t.mock.timers.setTime(at(TUESDAY, "10:30").getTime());
   cookie = await signIn(); // a day later, the first session has expired
   const manual = await handle(
-    req("POST", "/owner/bookings", { body: { serviceId: HAIRCUT.id, startsAt: at("2026-10-20", "11:00").toISOString(), name: "Walk-in", phone: "0400 000 000" }, cookie }),
+    req("POST", "/owner/bookings", { body: { serviceId: HAIRCUT.id, startsAt: at("2026-10-20", "11:30").toISOString(), name: "Walk-in", phone: "0400 000 000" }, cookie }),
     config,
   );
   assert.equal(manual.status, 201);
@@ -269,5 +272,5 @@ test("the owner sees the diary, cancels, blocks time and books by hand", async (
   assert.ok(sent.some((m) => m.to === "kai@example.com" && /cancel/i.test(m.text)));
 
   assert.equal((await handle(req("DELETE", `/owner/blocks/${block.body.id}`, { body: {}, cookie }), config)).status, 200);
-  assert.equal((await book("13:15", { email: "x@example.com" })).status, 201);
+  assert.equal((await book("13:00", { email: "x@example.com" })).status, 201);
 });

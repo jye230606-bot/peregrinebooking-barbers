@@ -65,21 +65,20 @@ test("weekly hours are Booksy's: Sun/Mon closed, Tue–Fri 10:00–18:15, Sat 11
   assert.deepEqual(openingOn(SATURDAY), { open: "11:00", close: "18:00" });
 });
 
-test("slots run every 15 minutes, and the last one still ends by close", () => {
+test("slots run every 45 minutes, and the last one still ends by close", () => {
   const cuts = labels(gridStarts(TUESDAY, HAIRCUT));
-  assert.equal(cuts[0], "10:00");
-  assert.equal(cuts[1], "10:15");
-  assert.equal(cuts.at(-1), "17:30"); // 17:30 + 45 = 18:15
-  assert.equal(cuts.length, 31);
+  assert.deepEqual(cuts, ["10:00", "10:45", "11:30", "12:15", "13:00", "13:45", "14:30", "15:15", "16:00", "16:45", "17:30"]);
+  // 17:30 + 45 = 18:15, closing time: eleven set spots on a weekday.
 
   const beards = labels(gridStarts(TUESDAY, BEARD));
-  assert.equal(beards.at(-1), "17:15"); // 17:15 + 60 = 18:15
-  assert.equal(beards.length, 30);
+  assert.equal(beards.at(-1), "16:45"); // 17:30 + 60 would run past 18:15
+  assert.equal(beards.length, 10);
 
   const saturday = labels(gridStarts(SATURDAY, HAIRCUT));
   assert.equal(saturday[0], "11:00");
-  assert.equal(saturday.at(-1), "17:15"); // 17:15 + 45 = 18:00
-  assert.deepEqual(labels(gridStarts(SATURDAY, BEARD)).at(-1), "17:00");
+  assert.equal(saturday.at(-1), "17:00"); // 17:00 + 45 = 17:45; 17:45 + 45 is past 18:00
+  assert.equal(saturday.length, 9);
+  assert.deepEqual(labels(gridStarts(SATURDAY, BEARD)).at(-1), "17:00"); // 17:00 + 60 = 18:00
 });
 
 test("closed days have no slots", () => {
@@ -92,17 +91,19 @@ test("closed days have no slots", () => {
 
 test("a booking must end by closing time", () => {
   assert.equal(check(HAIRCUT, TUESDAY, "17:30"), null);
-  assert.equal(check(HAIRCUT, TUESDAY, "17:45")?.code, "after-close");
-  assert.equal(check(BEARD, TUESDAY, "17:15"), null);
+  assert.equal(check(HAIRCUT, TUESDAY, "18:15")?.code, "after-close");
+  assert.equal(check(BEARD, TUESDAY, "16:45"), null);
   assert.equal(check(BEARD, TUESDAY, "17:30")?.code, "after-close");
-  assert.equal(check(HAIRCUT, SATURDAY, "17:15"), null);
-  assert.equal(check(HAIRCUT, SATURDAY, "17:30")?.code, "after-close");
+  assert.equal(check(HAIRCUT, SATURDAY, "17:00"), null);
+  assert.equal(check(HAIRCUT, SATURDAY, "17:45")?.code, "after-close");
 });
 
-test("starts before opening, or off the 15-minute grid, are refused", () => {
+test("starts before opening, or off the 45-minute grid, are refused", () => {
   assert.equal(check(HAIRCUT, TUESDAY, "09:45")?.code, "outside-hours");
   assert.equal(check(HAIRCUT, SATURDAY, "10:45")?.code, "outside-hours");
   assert.equal(check(HAIRCUT, TUESDAY, "10:10")?.code, "outside-hours");
+  assert.equal(check(HAIRCUT, TUESDAY, "10:15")?.code, "outside-hours");
+  assert.equal(check(HAIRCUT, SATURDAY, "11:15")?.code, "outside-hours");
 });
 
 // --- past, notice, advance window ------------------------------------------------
@@ -116,11 +117,11 @@ test("past starts are refused, for the owner too", () => {
 
 test("guests need two hours' notice; the owner does not", () => {
   const now = at(TUESDAY, "10:00");
-  assert.equal(check(HAIRCUT, TUESDAY, "11:45", { now })?.code, "too-soon");
-  assert.equal(check(HAIRCUT, TUESDAY, "12:00", { now }), null);
-  assert.equal(check(HAIRCUT, TUESDAY, "10:15", { now, actor: "owner" }), null);
+  assert.equal(check(HAIRCUT, TUESDAY, "11:30", { now })?.code, "too-soon");
+  assert.equal(check(HAIRCUT, TUESDAY, "12:15", { now }), null);
+  assert.equal(check(HAIRCUT, TUESDAY, "10:45", { now, actor: "owner" }), null);
   const free = labels(freeStarts(TUESDAY, HAIRCUT, ctx({ now })));
-  assert.equal(free[0], "12:00");
+  assert.equal(free[0], "12:15");
 });
 
 test("guests can book six weeks ahead and no further; the owner can", () => {
@@ -151,7 +152,7 @@ test("closed 5–9 November 2026, open again on the 10th", () => {
 test("an override can open different hours instead of closing", () => {
   const cfg = { ...tenant, overrides: [{ date: TUESDAY, closed: false, open: "12:00", close: "14:00" }] };
   assert.equal(check(HAIRCUT, TUESDAY, "10:00", {}, cfg)?.code, "outside-hours");
-  assert.equal(check(HAIRCUT, TUESDAY, "13:15", {}, cfg), null);
+  assert.equal(check(HAIRCUT, TUESDAY, "12:45", {}, cfg), null); // grid runs from the override's 12:00
   assert.equal(check(HAIRCUT, TUESDAY, "13:30", {}, cfg)?.code, "after-close");
 });
 
@@ -160,30 +161,34 @@ test("an override can open different hours instead of closing", () => {
 test("a block refuses any booking that overlaps it, and nothing either side", () => {
   const blocks = [{ id: "x", startsAt: iso(TUESDAY, "13:00"), endsAt: iso(TUESDAY, "14:00"), reason: "Lunch" }];
   assert.equal(check(HAIRCUT, TUESDAY, "12:15", { blocks }), null); // ends 13:00
-  assert.equal(check(HAIRCUT, TUESDAY, "12:30", { blocks })?.code, "blocked");
-  assert.equal(check(HAIRCUT, TUESDAY, "13:30", { blocks })?.code, "blocked");
-  assert.equal(check(HAIRCUT, TUESDAY, "14:00", { blocks }), null);
+  assert.equal(check(BEARD, TUESDAY, "12:15", { blocks })?.code, "blocked"); // runs to 13:15
+  assert.equal(check(HAIRCUT, TUESDAY, "13:00", { blocks })?.code, "blocked");
+  assert.equal(check(HAIRCUT, TUESDAY, "13:45", { blocks })?.code, "blocked");
+  assert.equal(check(HAIRCUT, TUESDAY, "14:30", { blocks }), null);
   const free = labels(freeStarts(TUESDAY, HAIRCUT, ctx({ blocks })));
-  assert.ok(!free.includes("12:30") && !free.includes("13:45"));
-  assert.ok(free.includes("12:15") && free.includes("14:00"));
+  assert.ok(!free.includes("13:00") && !free.includes("13:45"));
+  assert.ok(free.includes("12:15") && free.includes("14:30"));
 });
 
 test("confirmed bookings can't overlap; cancelled ones free their slot", () => {
   const bookings = [booking(TUESDAY, "10:00")];
   assert.equal(check(HAIRCUT, TUESDAY, "10:00", { bookings })?.code, "taken");
-  assert.equal(check(HAIRCUT, TUESDAY, "10:30", { bookings })?.code, "taken");
-  assert.equal(check(HAIRCUT, TUESDAY, "10:45", { bookings }), null);
+  assert.equal(check(HAIRCUT, TUESDAY, "10:45", { bookings }), null); // starts as it ends
 
-  // A 60-minute booking at 11:00 runs into one at 11:30.
+  // A 60-minute booking at 10:45 runs into one at 11:30, and holds the 11:30
+  // spot from a haircut too.
   const later = [booking(TUESDAY, "11:30")];
-  assert.equal(check(BEARD, TUESDAY, "11:00", { bookings: later })?.code, "taken");
-  assert.equal(check(BEARD, TUESDAY, "10:30", { bookings: later }), null); // ends 11:30 exactly
+  assert.equal(check(BEARD, TUESDAY, "10:45", { bookings: later })?.code, "taken");
+  assert.equal(check(HAIRCUT, TUESDAY, "10:45", { bookings: later }), null); // ends 11:30 exactly
+  const beard = [booking(TUESDAY, "10:00", BEARD)];
+  assert.equal(check(HAIRCUT, TUESDAY, "10:45", { bookings: beard })?.code, "taken");
+  assert.equal(check(HAIRCUT, TUESDAY, "11:30", { bookings: beard }), null);
 
   const cancelled = [booking(TUESDAY, "10:00", HAIRCUT, { status: "cancelled" })];
   assert.equal(check(HAIRCUT, TUESDAY, "10:00", { bookings: cancelled }), null);
 
   // Rescheduling a booking doesn't clash with itself.
-  assert.equal(check(HAIRCUT, TUESDAY, "10:15", { bookings, ignoreId: bookings[0].id }), null);
+  assert.equal(check(HAIRCUT, TUESDAY, "10:00", { bookings, ignoreId: bookings[0].id }), null);
 });
 
 test("the buffer, when set, keeps the next start clear", () => {
@@ -191,11 +196,11 @@ test("the buffer, when set, keeps the next start clear", () => {
   const b = booking(TUESDAY, "10:00");
   b.blockedUntil = iso(TUESDAY, "11:00");
   assert.equal(check(HAIRCUT, TUESDAY, "10:45", { bookings: [b] }, cfg)?.code, "taken");
-  assert.equal(check(HAIRCUT, TUESDAY, "11:00", { bookings: [b] }, cfg), null);
+  assert.equal(check(HAIRCUT, TUESDAY, "11:30", { bookings: [b] }, cfg), null);
   // And the candidate's own buffer can't run into the next booking.
-  const next = booking(TUESDAY, "12:00");
-  assert.equal(check(HAIRCUT, TUESDAY, "11:15", { bookings: [next] }, cfg)?.code, "taken");
-  assert.equal(check(HAIRCUT, TUESDAY, "11:00", { bookings: [next] }, cfg), null);
+  const next = booking(TUESDAY, "12:15");
+  assert.equal(check(HAIRCUT, TUESDAY, "11:30", { bookings: [next] }, cfg)?.code, "taken"); // held to 12:30
+  assert.equal(check(HAIRCUT, TUESDAY, "10:45", { bookings: [next] }, cfg), null);
 });
 
 test("a block can't be laid over a confirmed booking", () => {
@@ -222,13 +227,13 @@ test("DST starts on the first Sunday of October (4 Oct 2026): 2am → 3am", () =
 
   const slots = gridStarts(day, HAIRCUT, sundays);
   assert.equal(timeLabel(slots[0]), "09:00");
-  assert.equal(timeLabel(slots.at(-1)), "16:15");
-  assert.equal(slots.length, 30);
-  for (let i = 1; i < slots.length; i++) assert.equal(slots[i] - slots[i - 1], 15 * 60_000);
+  assert.equal(timeLabel(slots.at(-1)), "15:45");
+  assert.equal(slots.length, 10);
+  for (let i = 1; i < slots.length; i++) assert.equal(slots[i] - slots[i - 1], 45 * 60_000);
   assert.ok(slots.every((s) => shopDateKey(s) === day));
 
   const c = { bookings: [], blocks: [], now };
-  assert.equal(checkBooking({ serviceId: HAIRCUT.id, startsAt: at(day, "16:15").toISOString() }, c, sundays), null);
+  assert.equal(checkBooking({ serviceId: HAIRCUT.id, startsAt: at(day, "15:45").toISOString() }, c, sundays), null);
   assert.equal(checkBooking({ serviceId: HAIRCUT.id, startsAt: at(day, "16:30").toISOString() }, c, sundays)?.code, "after-close");
   // The real config is closed that Sunday.
   assert.equal(checkBooking({ serviceId: HAIRCUT.id, startsAt: at(day, "10:00").toISOString() }, c)?.code, "closed");
@@ -247,15 +252,15 @@ test("DST ends on the first Sunday of April (4 Apr 2027): 3am → 2am", () => {
 
   const slots = gridStarts(day, HAIRCUT, sundays);
   assert.equal(timeLabel(slots[0]), "09:00");
-  assert.equal(timeLabel(slots.at(-1)), "16:15");
-  assert.equal(slots.length, 30);
-  for (let i = 1; i < slots.length; i++) assert.equal(slots[i] - slots[i - 1], 15 * 60_000);
+  assert.equal(timeLabel(slots.at(-1)), "15:45");
+  assert.equal(slots.length, 10);
+  for (let i = 1; i < slots.length; i++) assert.equal(slots[i] - slots[i - 1], 45 * 60_000);
 
   const c = { bookings: [], blocks: [], now };
-  assert.equal(checkBooking({ serviceId: BEARD.id, startsAt: at(day, "16:00").toISOString() }, c, sundays), null);
-  assert.equal(checkBooking({ serviceId: BEARD.id, startsAt: at(day, "16:15").toISOString() }, c, sundays)?.code, "after-close");
-  assert.equal(timeLabel(gridStarts("2027-04-03", HAIRCUT).at(-1)), "17:15");
-  assert.equal(timeLabel(gridStarts("2027-04-06", BEARD).at(-1)), "17:15");
+  assert.equal(checkBooking({ serviceId: BEARD.id, startsAt: at(day, "15:45").toISOString() }, c, sundays), null);
+  assert.equal(checkBooking({ serviceId: BEARD.id, startsAt: at(day, "16:30").toISOString() }, c, sundays)?.code, "after-close");
+  assert.equal(timeLabel(gridStarts("2027-04-03", HAIRCUT).at(-1)), "17:00");
+  assert.equal(timeLabel(gridStarts("2027-04-06", BEARD).at(-1)), "16:45");
 });
 
 test("date keys and times are Melbourne's, whatever the instant's UTC date", () => {
