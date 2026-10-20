@@ -2,6 +2,7 @@
 
 import type { DateKey, Service } from "@/config/tenant";
 import { bookingWindow, gridStarts, openingOn } from "@/booking/rules";
+import { useTenant } from "./TenantContext";
 import { dateLabel, shiftDays, shopMinutes, timeLabel, weekdayName, weekdayOf, weekdayShort } from "@/booking/time";
 
 /**
@@ -29,7 +30,8 @@ export function DatePicker({
   value: DateKey | null;
   onChange: (key: DateKey) => void;
 }) {
-  const days = bookingWindow(now);
+  const cfg = useTenant();
+  const days = bookingWindow(now, cfg);
   const first = days[0];
   const last = days[days.length - 1];
   // Pad the grid out to whole Monday-to-Sunday weeks.
@@ -50,7 +52,7 @@ export function DatePicker({
         {cells.map((key, i) => {
           if (key < first || key > last) return <span key={key} className="vb-cal-spacer" />;
           const [, m, d] = key.split("-").map(Number);
-          const open = openingOn(key) !== null;
+          const open = openingOn(key, cfg) !== null;
           const showMonth = d === 1 || i === 0 || key === first;
           return (
             <button
@@ -90,10 +92,11 @@ export function TimeGrid({
   value: string | null;
   onChange: (iso: string) => void;
 }) {
+  const cfg = useTenant();
   if (free === null) return <p className="vb-label">Finding free times…</p>;
 
-  const hours = openingOn(date);
-  const all = gridStarts(date, service).filter((t) => t > now);
+  const hours = openingOn(date, cfg);
+  const all = gridStarts(date, service, cfg).filter((t) => t > now);
   const freeSet = new Set(free);
 
   if (!hours || freeSet.size === 0) {

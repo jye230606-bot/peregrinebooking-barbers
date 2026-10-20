@@ -5,6 +5,7 @@ import { fullAddress, tenant } from "@/config/tenant";
 import { reviews } from "@/content/reviews";
 import { money } from "./client-api";
 import { openDays } from "./copy";
+import { useTenant } from "./TenantContext";
 import { Mark } from "./Mark";
 import { openBooking } from "./BookingSheet";
 import { scrollToEl, useIntroDone, useScrollVar, WordsReveal } from "./Motion";
@@ -37,6 +38,7 @@ function useClock() {
 }
 
 export function TopBar() {
+  const cfg = useTenant();
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     // Tucks away while reading down, comes back on the way up.
@@ -67,7 +69,7 @@ export function TopBar() {
           Hours &amp; location
         </a>
         <span className="vb-muted">
-          {openDays("short")} · {tenant.address.locality}
+          {openDays("short", cfg)} · {tenant.address.locality}
         </span>
       </div>
     </div>
@@ -167,6 +169,7 @@ export function Hero() {
  * blade. Without JS or with reduced motion the button is simply there.
  */
 function TrimReveal() {
+  const cfg = useTenant();
   return (
     <div className="vb-trim">
       <div className="vb-trim-lane">
@@ -194,7 +197,7 @@ function TrimReveal() {
         </span>
       </div>
       <p className="vb-trim-sub">
-        {tenant.services.length} services from {money(Math.min(...tenant.services.map((s) => s.priceCents)))} · {openDays("short")}
+        {cfg.services.length} services from {money(Math.min(...cfg.services.map((s) => s.priceCents)))} · {openDays("short", cfg)}
       </p>
     </div>
   );

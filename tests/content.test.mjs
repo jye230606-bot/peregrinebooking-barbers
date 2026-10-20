@@ -115,3 +115,16 @@ test("no secret is exposed to the browser", async () => {
     if (/"use client"/.test(src)) assert.doesNotMatch(src, /SUPABASE|SERVICE_ROLE|process\.env/, f);
   }
 });
+
+test("the page and booking sheet use the shop's live schedule, not the built-in one", async () => {
+  const dir = path.join(root, "src/components");
+  for (const f of (await readdir(dir)).filter((f) => /\.(ts|tsx)$/.test(f))) {
+    const src = await readFile(path.join(dir, f), "utf8");
+    assert.doesNotMatch(src, /\btenant\.(services|weeklyHours|overrides|rules)\b/, `${f} reads the built-in schedule`);
+    for (const m of src.matchAll(/\b(openingOn|gridStarts|bookingWindow|serviceById|freeStarts|openDays)\(([^)]*)\)/g)) {
+      if (m[0].startsWith("openDays(") && /export function/.test(src.slice(Math.max(0, m.index - 20), m.index))) continue;
+      assert.match(m[2], /\bcfg\b/, `${f}: ${m[0]} must be given the live config`);
+    }
+  }
+  assert.match(await read("src/app/page.tsx"), /export const revalidate = 60;/);
+});

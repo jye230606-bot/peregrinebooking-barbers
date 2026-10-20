@@ -3,6 +3,7 @@ import { tenant } from "@/config/tenant";
 import { config, tenantConfig } from "@/booking/server/config";
 import { guestBooking, guestView } from "@/booking/server/api";
 import { ManageBooking } from "@/components/ManageBooking";
+import { TenantProvider } from "@/components/TenantContext";
 import { Mark } from "@/components/Mark";
 
 /**
@@ -47,7 +48,9 @@ export default async function ManagePage({
         </div>
       </header>
       {booking ? (
-        <ManageBooking initial={guestView(booking, new Date(), cfg)} token={token} />
+        <TenantProvider value={cfg}>
+          <ManageBooking initial={guestView(booking, new Date(), cfg)} token={token} />
+        </TenantProvider>
       ) : (
         <section className="vb-block vb-stack">
           <p className="vb-notice" style={{ margin: 0 }}>

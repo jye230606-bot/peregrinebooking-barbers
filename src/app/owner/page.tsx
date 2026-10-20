@@ -4,6 +4,8 @@ import { tenant } from "@/config/tenant";
 import { COOKIE, isOwner, ownerAuth } from "@/booking/server/auth";
 import { todayKey } from "@/booking/time";
 import { OwnerConsole, OwnerSignIn } from "@/components/Owner";
+import { TenantProvider } from "@/components/TenantContext";
+import { config, tenantConfig } from "@/booking/server/config";
 
 /**
  * Vance's diary: sign in, see the day or the week, cancel, block time, take a
@@ -24,6 +26,7 @@ export default async function OwnerPage() {
   const session = jar.get(COOKIE)?.value;
   const signedIn = session ? isOwner(`${COOKIE}=${session}`) : false;
   const feedSecret = process.env.CALENDAR_FEED_SECRET;
+  const cfg = signedIn ? await tenantConfig(config().store) : null;
 
   return (
     <main className="vb-page">
@@ -37,8 +40,10 @@ export default async function OwnerPage() {
         <p className="vb-notice">
           Owner sign-in is not configured. Set OWNER_PASSWORD_HASH and SESSION_SECRET, then restart.
         </p>
-      ) : signedIn ? (
-        <OwnerConsole today={todayKey()} feedPath={feedSecret ? `/api/calendar/${feedSecret}.ics` : null} />
+      ) : cfg ? (
+        <TenantProvider value={cfg}>
+          <OwnerConsole today={todayKey()} feedPath={feedSecret ? `/api/calendar/${feedSecret}.ics` : null} />
+        </TenantProvider>
       ) : (
         <OwnerSignIn />
       )}
