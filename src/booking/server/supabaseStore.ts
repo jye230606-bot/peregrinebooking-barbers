@@ -1,4 +1,6 @@
 import type { Block, Booking, BookingStatus } from '../types.ts'
+import type { Schedule } from '../schedule.ts'
+import { todayKey } from '../time.ts'
 import { SlotTaken, type BookingStore } from './store.ts'
 
 /** The Postgres schema V Barbers' tables live in, beside other clients'. */
@@ -35,6 +37,17 @@ type BookingRow = {
   cancelled_at: string | null
   customer?: { name: string; phone: string; email: string | null }
 }
+
+type RulesRow = {
+  slot_minutes: number
+  buffer_minutes: number
+  min_notice_minutes: number
+  max_advance_days: number
+  guest_change_cutoff_hours: number
+}
+type ServiceRow = { id: string; name: string; duration_min: number; price_cents: number; sort: number }
+type HoursRow = { weekday: number; open_local: string; close_local: string }
+type OverrideRow = { date: string; closed: boolean; open_local: string | null; close_local: string | null; note: string | null }
 
 type BlockRow = { id: string; tenant_id: string; starts_at: string; ends_at: string; reason: string | null }
 
@@ -124,7 +137,53 @@ export function supabaseStore({ url, serviceKey, tenantSlug, fetcher = (...a) =>
     return rows[0].id
   }
 
+  // Postgres `time` reads back as '10:00:00'; the rules work in 'HH:MM'.
+  const hhmm = (t: string) => t.slice(0, 5)
+
+  async function rows<T>(path: string): Promise<T[]> {
+    const res = await call(path)
+    await refuse(res)
+    return (await res.json()) as T[]
+  }
+
   return {
+    async loadSchedule(): Promise<Schedule> {
+      const t = await tenant()
+      const [[rules], services, hours, overrides] = await Promise.all([
+        rows<RulesRow>(`tenants?id=eq.${t}&select=slot_minutes,buffer_minutes,min_notice_minutes,max_advance_days,guest_change_cutoff_hours`),
+        rows<ServiceRow>(`services?tenant_id=eq.${t}&active=eq.true&select=id,name,duration_min,price_cents,sort&order=sort`),
+        rows<HoursRow>(`weekly_hours?tenant_id=eq.${t}&select=weekday,open_local,close_local`),
+        rows<OverrideRow>(`date_overrides?tenant_id=eq.${t}&date=gte.${todayKey()}&select=date,closed,open_local,close_local,note&order=date`),
+      ])
+
+      const weeklyHours: Schedule['weeklyHours'] = Array.from({ length: 7 }, () => null)
+      for (const h of hours) {
+        const [open, close] = [hhmm(h.open_local), hhmm(h.close_local)]
+        const had = weeklyHours[h.weekday]
+        weeklyHours[h.weekday] = had ? [open < had[0] ? open : had[0], close > had[1] ? close : had[1]] : [open, close]
+      }
+
+      return {
+        services: [...services]
+          .sort((a, b) => a.sort - b.sort)
+          .map((s) => ({ id: s.id, name: s.name, durationMin: s.duration_min, priceCents: s.price_cents })),
+        weeklyHours,
+        overrides: overrides.map((o) => ({
+          date: o.date,
+          closed: o.closed,
+          ...(o.closed ? {} : { open: hhmm(o.open_local!), close: hhmm(o.close_local!) }),
+          ...(o.note ? { note: o.note } : {}),
+        })),
+        rules: {
+          slotMinutes: rules.slot_minutes,
+          bufferMinutes: rules.buffer_minutes,
+          minNoticeMinutes: rules.min_notice_minutes,
+          maxAdvanceDays: rules.max_advance_days,
+          guestChangeCutoffHours: rules.guest_change_cutoff_hours,
+        },
+      }
+    },
+
     async listBookings(range) {
       const t = await tenant()
       const res = await call(
