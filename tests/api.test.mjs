@@ -274,3 +274,34 @@ test("the owner sees the diary, cancels, blocks time and books by hand", async (
   assert.equal((await handle(req("DELETE", `/owner/blocks/${block.body.id}`, { body: {}, cookie }), config)).status, 200);
   assert.equal((await book("13:00", { email: "x@example.com" })).status, 201);
 });
+
+test("a schedule change is enforced on the next booking", async (t) => {
+  // Vance moves Tuesday's start to 12:00 in the console.
+  let hours = tenant.weeklyHours.map((h, d) => (d === 2 ? ["12:00", "18:15"] : h));
+  const store = config.store;
+  config = {
+    ...config,
+    store: { ...store, loadSchedule: async () => ({ services: tenant.services, weeklyHours: hours, overrides: [], rules: tenant.rules }) },
+  };
+  assert.equal((await book("10:00")).body.code, "outside-hours");
+  assert.equal((await book("12:00")).status, 201);
+
+  // He puts it back; within a minute the page follows.
+  hours = tenant.weeklyHours;
+  t.mock.timers.setTime(NOW.getTime() + 61_000);
+  assert.equal((await book("10:00", { email: "b@example.com", phone: "0412000111" })).status, 201);
+});
+
+test("services Vance switches off can't be booked", async () => {
+  const store = config.store;
+  config = {
+    ...config,
+    store: {
+      ...store,
+      loadSchedule: async () => ({ services: [tenant.services[1]], weeklyHours: tenant.weeklyHours, overrides: [], rules: tenant.rules }),
+    },
+  };
+  assert.equal((await book("10:00")).body.code, "bad-service");
+  const avail = await handle(req("GET", "/availability", { query: { date: TUESDAY, service: HAIRCUT.id } }), config);
+  assert.equal(avail.status, 400);
+});

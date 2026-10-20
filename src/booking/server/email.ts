@@ -1,4 +1,4 @@
-import { fullAddress, tenant } from '../../config/tenant.ts'
+import { fullAddress, tenant, type TenantConfig } from '../../config/tenant.ts'
 import type { Booking } from '../types.ts'
 import { serviceById } from '../rules.ts'
 import { longDateLabel, shopDateKey, timeLabel } from '../time.ts'
@@ -83,9 +83,10 @@ function html(lines: string[], link?: { href: string; label: string }) {
 export function messagesFor(
   event: BookingEvent,
   b: Booking,
-  opts: { manageUrl?: string; ownerEmail?: string; now?: Date },
+  opts: { manageUrl?: string; ownerEmail?: string; now?: Date; cfg?: TenantConfig },
 ): Message[] {
-  const service = serviceById(b.serviceId)?.name ?? 'Appointment'
+  const cfg = opts.cfg ?? tenant
+  const service = serviceById(b.serviceId, cfg)?.name ?? 'Appointment'
   const out: Message[] = []
   const guestTo = b.customer.email
   const ownerTo = opts.ownerEmail
@@ -104,7 +105,7 @@ export function messagesFor(
         where,
         `${price}. ${tenant.payment}`,
         ...(opts.manageUrl
-          ? [`To change or cancel, use this link up to ${tenant.rules.guestChangeCutoffHours} hours before: ${opts.manageUrl}`]
+          ? [`To change or cancel, use this link up to ${cfg.rules.guestChangeCutoffHours} hours before: ${opts.manageUrl}`]
           : []),
       ]
       out.push({
@@ -152,7 +153,7 @@ export async function notify(
   mailer: Mailer | null,
   event: BookingEvent,
   b: Booking,
-  opts: { manageUrl?: string; ownerEmail?: string },
+  opts: { manageUrl?: string; ownerEmail?: string; cfg?: TenantConfig },
 ): Promise<void> {
   const messages = messagesFor(event, b, opts)
   if (!mailer) {

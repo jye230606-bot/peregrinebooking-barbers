@@ -26,7 +26,7 @@ function fakePostgrest() {
     blocks: [],
     rules: { slot_minutes: 45, buffer_minutes: 0, min_notice_minutes: 120, max_advance_days: 21, guest_change_cutoff_hours: 12 },
     services: [
-      { id: "s-cut", tenant_id: TENANT_ID, name: "Haircut", duration_min: 45, price_cents: 5000, active: true, sort: 1 },
+      { id: HAIRCUT.id, tenant_id: TENANT_ID, name: "Haircut", duration_min: 45, price_cents: 5000, active: true, sort: 1 },
       { id: "s-old", tenant_id: TENANT_ID, name: "Old cut", duration_min: 30, price_cents: 3000, active: false, sort: 2 },
     ],
     weekly_hours: [2, 3, 4, 5].map((weekday) => ({ tenant_id: TENANT_ID, weekday, open_local: "10:00:00", close_local: "18:15:00" }))
@@ -211,7 +211,7 @@ test("a cancelled booking frees its slot at the database too", async () => {
 
 test("the schedule comes from the database", async () => {
   const s = await config.store.loadSchedule();
-  assert.deepEqual(s.services, [{ id: "s-cut", name: "Haircut", durationMin: 45, priceCents: 5000 }]);
+  assert.deepEqual(s.services, [{ id: HAIRCUT.id, name: "Haircut", durationMin: 45, priceCents: 5000 }]);
   assert.equal(s.weeklyHours.length, 7);
   assert.equal(s.weeklyHours[0], null);
   assert.equal(s.weeklyHours[1], null);

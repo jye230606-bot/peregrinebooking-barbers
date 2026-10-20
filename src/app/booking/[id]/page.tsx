@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { tenant } from "@/config/tenant";
-import { config } from "@/booking/server/config";
+import { config, tenantConfig } from "@/booking/server/config";
 import { guestBooking, guestView } from "@/booking/server/api";
 import { ManageBooking } from "@/components/ManageBooking";
 import { Mark } from "@/components/Mark";
@@ -30,7 +30,8 @@ export default async function ManagePage({
   const { id } = await params;
   const { t } = await searchParams;
   const token = typeof t === "string" ? t : "";
-  const booking = await guestBooking(config().store, id, token);
+  const { store } = config();
+  const [booking, cfg] = await Promise.all([guestBooking(store, id, token), tenantConfig(store)]);
 
   return (
     <main className="vb-page">
@@ -46,7 +47,7 @@ export default async function ManagePage({
         </div>
       </header>
       {booking ? (
-        <ManageBooking initial={guestView(booking)} token={token} />
+        <ManageBooking initial={guestView(booking, new Date(), cfg)} token={token} />
       ) : (
         <section className="vb-block vb-stack">
           <p className="vb-notice" style={{ margin: 0 }}>
