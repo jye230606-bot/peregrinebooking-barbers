@@ -124,15 +124,15 @@ test("guests need two hours' notice; the owner does not", () => {
   assert.equal(free[0], "12:15");
 });
 
-test("guests can book six weeks ahead and no further; the owner can", () => {
+test("guests can book three weeks ahead and no further; the owner can", () => {
   const window = bookingWindow(NOW);
   assert.equal(window[0], "2026-10-19");
-  assert.equal(window.at(-1), "2026-11-30");
-  assert.equal(window.length, 43);
-  // 2026-11-28 is a Saturday inside the window; 2026-12-01 a Tuesday beyond it.
-  assert.equal(check(HAIRCUT, "2026-11-28", "11:00"), null);
-  assert.equal(check(HAIRCUT, "2026-12-01", "10:00")?.code, "too-far");
-  assert.equal(check(HAIRCUT, "2026-12-01", "10:00", { actor: "owner" }), null);
+  assert.equal(window.at(-1), "2026-11-09");
+  assert.equal(window.length, 22);
+  // 2026-11-04 is a Wednesday inside the window; 2026-11-10 a Tuesday beyond it.
+  assert.equal(check(HAIRCUT, "2026-11-04", "10:00"), null);
+  assert.equal(check(HAIRCUT, "2026-11-10", "10:00")?.code, "too-far");
+  assert.equal(check(HAIRCUT, "2026-11-10", "10:00", { actor: "owner" }), null);
 });
 
 // --- overrides ---------------------------------------------------------------
@@ -145,7 +145,8 @@ test("closed 5–9 November 2026, open again on the 10th", () => {
   // Thursday and Friday the 5th and 6th, Saturday the 7th, would otherwise be open.
   assert.equal(check(HAIRCUT, "2026-11-05", "10:00")?.code, "closed");
   assert.equal(check(HAIRCUT, "2026-11-07", "11:00")?.code, "closed");
-  assert.equal(check(HAIRCUT, "2026-11-10", "10:00"), null);
+  // Checked from 1 November, so the 10th is inside the three-week window.
+  assert.equal(check(HAIRCUT, "2026-11-10", "10:00", { now: at("2026-11-01", "09:00") }), null);
   assert.equal(check(HAIRCUT, "2026-11-04", "10:00"), null);
 });
 

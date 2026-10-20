@@ -91,7 +91,7 @@ export const tenant: TenantConfig = {
     slotMinutes: 45, // Vance: fixed 45-minute spots, ~11 a day
     bufferMinutes: 0, // confirm with Vance
     minNoticeMinutes: 120, // confirm with Vance
-    maxAdvanceDays: 42, // confirm with Vance
+    maxAdvanceDays: 21, // Vance: three weeks ahead
     guestChangeCutoffHours: 12, // confirm with Vance
   },
 }
