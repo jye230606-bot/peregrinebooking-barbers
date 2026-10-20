@@ -207,7 +207,7 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
       const out = await create(config, cfg, body, checked.details, 'guest')
       if (!out.booking || !out.token) return out.res
       const link = manageUrl(config.siteUrl ?? req.origin, out.booking.id, out.token)
-      await notify(config.mailer, 'created', out.booking, { cfg,  manageUrl: link, ownerEmail: config.ownerEmail })
+      await notify(config.mailer, 'created', out.booking, { cfg, siteUrl: config.siteUrl, manageUrl: link, ownerEmail: config.ownerEmail })
       return json(201, {
         booking: guestView(out.booking, new Date(), cfg),
         manageUrl: link,
@@ -256,7 +256,7 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
         await store.updateBooking(cancelled)
         return { res: json(200, guestView(cancelled, now, cfg)), booking: cancelled }
       })
-      if (out.booking) await notify(config.mailer, 'cancelled-by-guest', out.booking, { cfg,  ownerEmail: config.ownerEmail })
+      if (out.booking) await notify(config.mailer, 'cancelled-by-guest', out.booking, { cfg, siteUrl: config.siteUrl, ownerEmail: config.ownerEmail })
       return out.res
     }
 
@@ -298,7 +298,7 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
         return { res: json(200, guestView(moved, now, cfg)), booking: moved }
       })
       if (out.booking) {
-        await notify(config.mailer, 'rescheduled', out.booking, { cfg, 
+        await notify(config.mailer, 'rescheduled', out.booking, { cfg, siteUrl: config.siteUrl,
           manageUrl: manageUrl(config.siteUrl ?? req.origin, out.booking.id, String(token)),
           ownerEmail: config.ownerEmail,
         })
@@ -354,7 +354,7 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
       if (!out.booking || !out.token) return out.res
       const link = manageUrl(config.siteUrl ?? req.origin, out.booking.id, out.token)
       // The customer gets a confirmation if the owner took an email; Vance needs no alert for his own booking.
-      await notify(config.mailer, 'created', out.booking, { cfg,  manageUrl: link })
+      await notify(config.mailer, 'created', out.booking, { cfg, siteUrl: config.siteUrl, manageUrl: link })
       return json(201, { id: out.booking.id })
     }
 
@@ -370,7 +370,7 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
         await store.updateBooking(cancelled)
         return { res: json(200, { ok: true }), booking: cancelled }
       })
-      if (out.booking) await notify(config.mailer, 'cancelled-by-owner', out.booking, { cfg, })
+      if (out.booking) await notify(config.mailer, 'cancelled-by-owner', out.booking, { cfg, siteUrl: config.siteUrl })
       return out.res
     }
 
