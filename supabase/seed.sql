@@ -70,4 +70,10 @@ from vbarbers.tenants t,
 where t.slug = 'vbarbers'
 on conflict (id) do nothing;
 
+-- Booking rules (editable by Vance in the console from here on).
+update vbarbers.tenants
+set slot_minutes = 45, buffer_minutes = 0, min_notice_minutes = 120,
+    max_advance_days = 21, guest_change_cutoff_hours = 12
+where slug = 'vbarbers';
+
 commit;
