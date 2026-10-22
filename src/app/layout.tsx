@@ -14,7 +14,6 @@ export const metadata: Metadata = {
     description: `${fullAddress()}. ${tenant.payment}`,
     images: [{ url: "/brand/vbarbersz-logo.jpeg", width: 2048, height: 2048 }],
   },
-  icons: { icon: "/brand/vbarbersz-logo.jpeg", apple: "/brand/vbarbersz-logo.jpeg" },
 };
 
 export const viewport: Viewport = {
