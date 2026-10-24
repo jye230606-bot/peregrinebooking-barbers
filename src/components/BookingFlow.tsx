@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fullAddress, tenant, type DateKey } from "@/config/tenant";
+import { tenant, type DateKey } from "@/config/tenant";
 import { LIMITS, serviceById } from "@/booking/rules";
 import { useTenant } from "./TenantContext";
 import { dateLabel, shopDateKey, timeLabel } from "@/booking/time";
@@ -156,7 +156,7 @@ export function BookingFlow({ initialServiceId, onDone }: { initialServiceId?: s
             <dt>Price</dt>
             <dd>{money(b.priceCents)}</dd>
             <dt>Where</dt>
-            <dd>{fullAddress()}</dd>
+            <dd>In your confirmation email</dd>
             <dt>Pay</dt>
             <dd>PayID or cash, on the day</dd>
           </dl>

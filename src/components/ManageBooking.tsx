@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fullAddress, tenant, type DateKey } from "@/config/tenant";
+import { tenant, type DateKey } from "@/config/tenant";
 import { serviceById } from "@/booking/rules";
 import { useTenant } from "./TenantContext";
 import { dateLabel, shopDateKey, timeLabel } from "@/booking/time";
@@ -16,7 +16,7 @@ import { DatePicker, Step, TimeGrid } from "./Pickers";
 
 type Mode = "view" | "cancel" | "move";
 
-export function ManageBooking({ initial, token }: { initial: GuestBooking; token: string }) {
+export function ManageBooking({ initial, token, address }: { initial: GuestBooking; token: string; address: string }) {
   const cfg = useTenant();
   const [booking, setBooking] = useState(initial);
   const [mode, setMode] = useState<Mode>("view");
@@ -112,7 +112,7 @@ export function ManageBooking({ initial, token }: { initial: GuestBooking; token
           <dt className="vb-label">Price</dt>
           <dd>{money(booking.priceCents)}</dd>
           <dt className="vb-label">Where</dt>
-          <dd>{fullAddress()}</dd>
+          <dd>{address}</dd>
         </dl>
         {!cancelled && <p style={{ margin: 0 }}>{tenant.payment}</p>}
         {notice && (

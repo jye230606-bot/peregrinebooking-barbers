@@ -34,7 +34,8 @@ export type TenantConfig = {
   name: string
   barber: string
   timezone: string
-  address: { street: string; locality: string; region: string; postcode: string }
+  /** The suburb, which is all the public site shows. The street is in `address.ts`. */
+  address: { locality: string; region: string }
   instagram: string
   booksy: string
   /** As Booksy shows it: the handle, and the tag under the rating. */
@@ -58,7 +59,7 @@ export const tenant: TenantConfig = {
   name: 'V Barbers',
   barber: 'Vance',
   timezone: 'Australia/Melbourne',
-  address: { street: '41 Flowerdale Road', locality: 'Hampton East', region: 'VIC', postcode: '3188' },
+  address: { locality: 'Hampton East', region: 'VIC' },
   instagram: 'vbarbersz',
   booksy: 'vbarbersz',
   booksyName: 'vbarbersz',
@@ -96,5 +97,5 @@ export const tenant: TenantConfig = {
   },
 }
 
-export const fullAddress = (t: TenantConfig = tenant) =>
-  `${t.address.street}, ${t.address.locality} ${t.address.region} ${t.address.postcode}`
+/** "Hampton East, VIC": where the shop is, without the street. */
+export const area = (t: TenantConfig = tenant) => `${t.address.locality}, ${t.address.region}`

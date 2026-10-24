@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { tenant } from "@/config/tenant";
+import { fullAddress } from "@/config/address";
 import { config, tenantConfig } from "@/booking/server/config";
 import { guestBooking, guestView } from "@/booking/server/api";
 import { ManageBooking } from "@/components/ManageBooking";
@@ -49,7 +50,7 @@ export default async function ManagePage({
       </header>
       {booking ? (
         <TenantProvider value={cfg}>
-          <ManageBooking initial={guestView(booking, new Date(), cfg)} token={token} />
+          <ManageBooking initial={guestView(booking, new Date(), cfg)} token={token} address={fullAddress(cfg)} />
         </TenantProvider>
       ) : (
         <section className="vb-block vb-stack">

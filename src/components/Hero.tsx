@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fullAddress, tenant } from "@/config/tenant";
+import { area, tenant } from "@/config/tenant";
 import { reviews } from "@/content/reviews";
 import { money } from "./client-api";
 import { openDays } from "./copy";
@@ -11,7 +11,7 @@ import { openBooking } from "./BookingSheet";
 import { scrollToEl, useIntroDone, useScrollVar, WordsReveal } from "./Motion";
 
 /**
- * The top of the page: a floating bar, the name and address, a trimmer that
+ * The top of the page: a floating bar, the shop and its suburb, a trimmer that
  * buzzes across to reveal the booking button, and the shop's name set enormous with
  * electric-blue light breathing behind it. The light trails the
  * pointer, and the whole stage sinks and dims as the page scrolls.
@@ -116,7 +116,7 @@ export function Hero() {
           as="h1"
           mode="intro"
           className="vb-hero-copy"
-          parts={[{ text: fullAddress(), muted: true }]}
+          parts={[{ text: `${tenant.name}, ${area()}`, muted: true }]}
         />
       </div>
 
@@ -124,7 +124,7 @@ export function Hero() {
 
       <div className="vb-hero-meta vb-hero-enter">
         <span>
-          {tenant.address.locality}, {tenant.address.region}
+          {area()}
           {clock && (
             <>
               {"  ·  "}

@@ -1437,12 +1437,6 @@ html[data-intro="seen"] .vb-intro {
   height: 100%;
 }
 
-.vb-intro-name {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: var(--track-display);
-}
-
 /* --- pills ---------------------------------------------------------------- */
 
 .vb-pill {

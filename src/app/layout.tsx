@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter_Tight } from "next/font/google";
-import { tenant, fullAddress } from "@/config/tenant";
+import { tenant, area } from "@/config/tenant";
 import "./globals.css";
 
 const interTight = Inter_Tight({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-inter-tight", display: "swap" });
@@ -8,10 +8,10 @@ const interTight = Inter_Tight({ subsets: ["latin"], weight: ["400", "500", "600
 export const metadata: Metadata = {
   metadataBase: process.env.SITE_URL ? new URL(process.env.SITE_URL) : undefined,
   title: `Book with ${tenant.barber} · ${tenant.name}`,
-  description: `Book a haircut with ${tenant.barber} at ${tenant.name}, ${fullAddress()}.`,
+  description: `Book a haircut with ${tenant.barber} at ${tenant.name}, ${area()}.`,
   openGraph: {
     title: `Book with ${tenant.barber} · ${tenant.name}`,
-    description: `${fullAddress()}. ${tenant.payment}`,
+    description: `${area()}. ${tenant.payment}`,
     images: [{ url: "/brand/vbarbersz-logo.jpeg", width: 2048, height: 2048 }],
   },
 };
