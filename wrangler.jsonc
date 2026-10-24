@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vbarbers",
+  "main": "vinext/server/fetch-handler",
+  "compatibility_date": "2026-10-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "not_found_handling": "none",
+    "run_worker_first": ["/*", "!/_next/static/*", "!/*/_next/static/*"]
+  },
+  "observability": { "enabled": true },
+  "vars": {
+    "STORE": "supabase",
+    "SUPABASE_URL": "https://pzljcmcnthzklaurzxpa.supabase.co",
+    "TENANT_SLUG": "vbarbers",
+    "SITE_URL": "https://vbarbers.peregrinepartners.space",
+    "OWNER_EMAIL": "Vance.christo@icloud.com"
+  }
+}
