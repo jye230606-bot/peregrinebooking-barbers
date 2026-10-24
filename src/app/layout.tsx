@@ -7,10 +7,10 @@ const interTight = Inter_Tight({ subsets: ["latin"], weight: ["400", "500", "600
 
 export const metadata: Metadata = {
   metadataBase: process.env.SITE_URL ? new URL(process.env.SITE_URL) : undefined,
-  title: `Book with ${tenant.barber} · ${tenant.name}`,
-  description: `Book a haircut with ${tenant.barber} at ${tenant.name}, ${area()}.`,
+  title: `${tenant.name} · Book a haircut`,
+  description: `Book a haircut at ${tenant.name}, ${area()}.`,
   openGraph: {
-    title: `Book with ${tenant.barber} · ${tenant.name}`,
+    title: `${tenant.name} · Book a haircut`,
     description: `${area()}. ${tenant.payment}`,
     images: [{ url: "/brand/vbarbersz-logo.jpeg", width: 2048, height: 2048 }],
   },

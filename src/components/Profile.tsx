@@ -40,7 +40,7 @@ export function Profile() {
           </div>
         </Reveal>
         <Reveal className="vb-profile-actions" index={2}>
-          <ShareButton title={`${tenant.name} · ${tenant.barber}`} />
+          <ShareButton title={tenant.name} />
         </Reveal>
       </div>
 
