@@ -20,7 +20,22 @@ const OTHER_TENANT = "00000000-0000-4000-8000-000000000002";
 const TUESDAY = "2026-10-20";
 
 function fakePostgrest() {
-  const db = { customers: [], bookings: [], blocks: [] };
+  const db = {
+    customers: [],
+    bookings: [],
+    blocks: [],
+    rules: { slot_minutes: 45, buffer_minutes: 0, min_notice_minutes: 120, max_advance_days: 21, guest_change_cutoff_hours: 12 },
+    services: [
+      { id: HAIRCUT.id, tenant_id: TENANT_ID, name: "Haircut", duration_min: 45, price_cents: 5000, active: true, sort: 1 },
+      { id: "s-old", tenant_id: TENANT_ID, name: "Old cut", duration_min: 30, price_cents: 3000, active: false, sort: 2 },
+    ],
+    weekly_hours: [2, 3, 4, 5].map((weekday) => ({ tenant_id: TENANT_ID, weekday, open_local: "10:00:00", close_local: "18:15:00" }))
+      .concat([{ tenant_id: TENANT_ID, weekday: 6, open_local: "11:00:00", close_local: "18:00:00" }]),
+    date_overrides: [
+      { tenant_id: TENANT_ID, date: "2026-10-01", closed: true, open_local: null, close_local: null, note: null }, // past
+      { tenant_id: TENANT_ID, date: "2026-11-05", closed: true, open_local: null, close_local: null, note: null },
+    ],
+  };
   const calls = [];
   const delay = () => new Promise((r) => setTimeout(r, Math.random() * 15));
   const respond = (status, json) => new Response(json === undefined ? null : JSON.stringify(json), { status });
@@ -33,9 +48,22 @@ function fakePostgrest() {
     const table = new URL(url).pathname.split("/").pop();
     const p = params(url);
     calls.push({ table, method, body, url: String(url) });
+    // Every call must target the vbarbers schema, never public.
+    if (init.headers?.["Accept-Profile"] !== "vbarbers" || init.headers?.["Content-Profile"] !== "vbarbers") {
+      return respond(404, { code: "PGRST106", message: "wrong schema" });
+    }
     await delay();
 
-    if (table === "tenants") return respond(200, eq(p, "slug") === "vbarbers" ? [{ id: TENANT_ID }] : []);
+    if (table === "tenants") {
+      const hit = eq(p, "slug") === "vbarbers" || eq(p, "id") === TENANT_ID;
+      return respond(200, hit ? [{ id: TENANT_ID, ...db.rules }] : []);
+    }
+    if (["services", "weekly_hours", "date_overrides"].includes(table) && method === "GET") {
+      let rows = db[table].filter((r) => r.tenant_id === eq(p, "tenant_id"));
+      if (p.active) rows = rows.filter((r) => String(r.active) === p.active.replace(/^eq\./, ""));
+      if (p.date) rows = rows.filter((r) => r.date >= p.date.replace(/^gte\./, ""));
+      return respond(200, rows);
+    }
 
     if (table === "customers" && method === "POST") {
       let row = db.customers.find((c) => c.tenant_id === body.tenant_id && c.phone === body.phone);
@@ -159,7 +187,7 @@ test("two parallel inserts for the same slot: exactly one succeeds, the other ge
   // Both requests read an empty diary and pass every rule; only the database can choose.
   const body = (n) => ({
     serviceId: HAIRCUT.id,
-    startsAt: at(TUESDAY, "15:00").toISOString(),
+    startsAt: at(TUESDAY, "15:15").toISOString(),
     name: `Racer ${n}`,
     phone: `041200000${n}`,
     email: `racer${n}@example.com`,
@@ -179,4 +207,22 @@ test("a cancelled booking frees its slot at the database too", async () => {
   await config.store.updateBooking({ ...b, status: "cancelled", cancelledAt: new Date().toISOString() });
   await config.store.insertBooking(booking("44444444-4444-4444-8444-444444444444"));
   assert.equal(pg.db.bookings.filter((x) => x.status === "confirmed").length, 1);
+});
+
+test("the schedule comes from the database", async () => {
+  const s = await config.store.loadSchedule();
+  assert.deepEqual(s.services, [{ id: HAIRCUT.id, name: "Haircut", durationMin: 45, priceCents: 5000 }]);
+  assert.equal(s.weeklyHours.length, 7);
+  assert.equal(s.weeklyHours[0], null);
+  assert.equal(s.weeklyHours[1], null);
+  assert.deepEqual(s.weeklyHours[2], ["10:00", "18:15"]);
+  assert.deepEqual(s.weeklyHours[6], ["11:00", "18:00"]);
+  assert.deepEqual(s.overrides, [{ date: "2026-11-05", closed: true }]);
+  assert.deepEqual(s.rules, { slotMinutes: 45, bufferMinutes: 0, minNoticeMinutes: 120, maxAdvanceDays: 21, guestChangeCutoffHours: 12 });
+});
+
+test("a weekday with two rows opens at the earliest and closes at the latest", async () => {
+  pg.db.weekly_hours.push({ tenant_id: TENANT_ID, weekday: 2, open_local: "09:00:00", close_local: "12:00:00" });
+  const s = await config.store.loadSchedule();
+  assert.deepEqual(s.weeklyHours[2], ["09:00", "18:15"]);
 });

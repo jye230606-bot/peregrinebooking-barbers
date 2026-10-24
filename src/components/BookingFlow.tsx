@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fullAddress, tenant, type DateKey } from "@/config/tenant";
+import { tenant, type DateKey } from "@/config/tenant";
 import { LIMITS, serviceById } from "@/booking/rules";
+import { useTenant } from "./TenantContext";
 import { dateLabel, shopDateKey, timeLabel } from "@/booking/time";
 import type { GuestBooking } from "@/booking/server/api";
 import { api, money } from "./client-api";
@@ -19,9 +20,10 @@ import { DatePicker, Step, TimeGrid } from "./Pickers";
 type Created = { booking: GuestBooking; manageUrl: string; icsUrl: string };
 
 export function BookingFlow({ initialServiceId, onDone }: { initialServiceId?: string; onDone?: () => void } = {}) {
+  const cfg = useTenant();
   const [now, setNow] = useState<Date | null>(null);
   const [serviceId, setServiceId] = useState<string | null>(
-    initialServiceId && serviceById(initialServiceId) ? initialServiceId : null,
+    initialServiceId && serviceById(initialServiceId, cfg) ? initialServiceId : null,
   );
   const [date, setDate] = useState<DateKey | null>(null);
   const [startsAt, setStartsAt] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export function BookingFlow({ initialServiceId, onDone }: { initialServiceId?: s
   const detailsRef = useRef<HTMLDivElement>(null);
   const doneRef = useRef<HTMLDivElement>(null);
 
-  const service = serviceId ? serviceById(serviceId) ?? null : null;
+  const service = serviceId ? serviceById(serviceId, cfg) ?? null : null;
 
   // The clock is the browser's, set after mount so the server render and the
   // first client render agree. It ticks so a tab left open doesn't offer the past.
@@ -154,9 +156,9 @@ export function BookingFlow({ initialServiceId, onDone }: { initialServiceId?: s
             <dt>Price</dt>
             <dd>{money(b.priceCents)}</dd>
             <dt>Where</dt>
-            <dd>{fullAddress()}</dd>
+            <dd>In your confirmation email</dd>
             <dt>Pay</dt>
-            <dd>PayID or cash, on the day</dd>
+            <dd>Card or cash, on the day</dd>
           </dl>
           <a className="vb-btn vb-btn-primary vb-btn-center" href={created.icsUrl} style={{ marginTop: "var(--gap)" }}>
             Add to calendar
@@ -166,7 +168,7 @@ export function BookingFlow({ initialServiceId, onDone }: { initialServiceId?: s
           </a>
           <p className="vb-label" style={{ margin: 0, textAlign: "center" }}>
             A confirmation has been sent to your email. Changes and cancellations can be made online up to{" "}
-            {tenant.rules.guestChangeCutoffHours} hours before.
+            {cfg.rules.guestChangeCutoffHours} hours before.
           </p>
           {onDone && (
             <button type="button" className="vb-btn vb-btn-ghost vb-btn-center" onClick={onDone}>
@@ -182,7 +184,7 @@ export function BookingFlow({ initialServiceId, onDone }: { initialServiceId?: s
     <>
       <Step n="01" label="Service" id="step-service">
         <div className="vb-stack" role="group" aria-label="Choose a service">
-          {tenant.services.map((s) => (
+          {cfg.services.map((s) => (
             <button
               key={s.id}
               type="button"

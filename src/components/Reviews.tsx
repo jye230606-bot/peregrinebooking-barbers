@@ -57,7 +57,7 @@ function ReviewCard({ r, index }: { r: Review; index: number }) {
         </button>
       )}
       <p className="vb-review-meta">
-        Service: <span>{r.service}</span> · Staffer: <span>{r.staffer}</span>
+        Service: <span>{r.service}</span>
       </p>
     </li>
   );

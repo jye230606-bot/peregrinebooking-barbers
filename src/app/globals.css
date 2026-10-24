@@ -418,6 +418,32 @@ a {
 }
 
 /* Times */
+.vb-time-groups {
+  display: grid;
+  gap: 28px;
+}
+
+.vb-time-group {
+  display: grid;
+  gap: 12px;
+}
+
+.vb-time-group-h {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--c-muted);
+}
+
+/* A hairline runs out from each part-of-day label. */
+.vb-time-group-h::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--c-line);
+}
+
 .vb-times {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -723,55 +749,13 @@ html.js .vb-hero:not([data-go]) .vb-hero-enter {
   }
 }
 
-.vb-cta {
-  justify-self: end;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 20px;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: var(--c-fg);
-  color: var(--c-bg);
-  font: inherit;
-  font-weight: var(--weight-display);
-  font-size: 15px;
-  cursor: pointer;
-  transition:
-    background-color var(--dur) var(--ease-std),
-    color var(--dur) var(--ease-std),
-    box-shadow var(--dur-slow) var(--ease-out),
-    transform var(--dur) var(--ease-spring);
-}
-
-.vb-cta:active {
-  transform: scale(0.95);
-}
-
-@media (hover: hover) {
-  .vb-cta:hover {
-    background: var(--c-accent);
-    box-shadow: 0 14px 40px -12px var(--c-accent);
-  }
-}
-
-.vb-spark {
-  display: inline-block;
-  transition: transform var(--dur-slow) var(--ease-spring);
-}
-
-.vb-cta:hover .vb-spark {
-  transform: rotate(90deg) scale(1.15);
-}
-
 /* --- hero -------------------------------------------------------------------- */
 
 .vb-hero {
   position: relative;
   min-height: 100svh;
   display: grid;
-  grid-template-rows: 1fr auto auto;
+  grid-template-rows: auto 1fr auto auto;
   overflow: hidden;
   isolation: isolate;
 }
@@ -836,7 +820,7 @@ html.js .vb-hero:not([data-go]) .vb-hero-enter {
   left: 50%;
   width: max-content;
   margin: 0;
-  font-size: min(calc((100vw - 2 * var(--gutter)) / 2.8), 62svh);
+  font-size: min(calc((100vw - 2 * var(--gutter)) / 4.7), 62svh); /* sized so VBARBERS spans the width */
   font-weight: var(--weight-display);
   letter-spacing: var(--track-hero);
   line-height: 0.78;
@@ -926,6 +910,319 @@ html.js .vb-hero:not([data-go]) .vb-hero-enter {
   z-index: 1;
   background: linear-gradient(to bottom, transparent, var(--c-bg));
   pointer-events: none;
+}
+
+/* --- hero: trimmer reveal ----------------------------------------------------- */
+
+/* Transform and opacity only, everywhere below: nothing here makes the phone
+   re-lay-out or repaint while it moves. */
+
+.vb-trim {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  padding: 32px var(--gutter);
+  --trim-dur: 2600ms;
+  --trim-delay: 500ms;
+  --trim-after: calc(var(--trim-delay) + var(--trim-dur) * 0.82);
+}
+
+.vb-trim-lane {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+/* A dotted line the trimmer "cuts" as it goes. */
+.vb-trim-guide {
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  top: 50%;
+  border-top: 2px dashed color-mix(in srgb, var(--c-fg) 18%, transparent);
+  transform-origin: 100% 50%;
+  opacity: 0;
+}
+
+.vb-trim-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 72px;
+  padding: 0 10px 0 34px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--c-fg);
+  color: var(--c-bg);
+  font: inherit;
+  font-size: clamp(20px, 2.6vw, 24px);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--track-tight);
+  cursor: pointer;
+  transition: transform var(--dur-slow) var(--ease-spring);
+}
+
+/* The blue edge: a rounded window 2px bigger than the button, with a conic
+   gradient turning inside it. Rotating it is free; repainting it isn't. */
+.vb-trim-edge {
+  position: absolute;
+  inset: -2px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.vb-trim-edge::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 130%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: conic-gradient(var(--c-accent), var(--vb-blue-deep) 25%, var(--c-fg) 45%, var(--c-fg) 70%, var(--c-accent));
+}
+
+.vb-trim-arrow {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-pill);
+  background: var(--c-bg);
+  color: var(--c-fg);
+  transition:
+    background var(--dur-slow) var(--ease-out),
+    color var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-spring);
+}
+
+.vb-trim-btn:active {
+  transform: scale(0.96);
+}
+
+.vb-trim-btn:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 6px;
+}
+
+@media (hover: hover) {
+  .vb-trim-btn:hover {
+    transform: translateY(-2px) scale(1.02);
+  }
+  .vb-trim-btn:hover .vb-trim-arrow {
+    background: var(--c-accent);
+    color: var(--c-on-accent);
+    transform: rotate(-45deg);
+  }
+}
+
+/* Soft blue light under the button, and a ring that keeps pulsing out of it.
+   The shadow is painted once; only its opacity and the ring's scale move. */
+.vb-trim-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-pill);
+  pointer-events: none;
+  opacity: 0;
+  box-shadow: 0 24px 80px -18px var(--c-accent);
+}
+
+.vb-trim-halo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid var(--c-accent);
+  opacity: 0;
+}
+
+/* Black over the button until the blade passes; it shrinks towards the right
+   so its left edge always sits under the teeth. */
+.vb-trim-cover {
+  position: absolute;
+  inset: -8px;
+  background: var(--c-bg);
+  transform-origin: 100% 50%;
+  transform: scaleX(0);
+  pointer-events: none;
+}
+
+/* The track spans the lane, so translateX(100%) is the lane's far edge. */
+.vb-trimmer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.vb-trimmer-body {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 132px;
+  translate: -78% -50%; /* the teeth, not the body, sit on the cut edge */
+  filter: drop-shadow(0 10px 18px color-mix(in srgb, var(--c-bg) 60%, transparent));
+}
+
+.vb-trimmer svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Clippings flicking off behind the blade. */
+.vb-trimmer i {
+  position: absolute;
+  right: 6%;
+  top: 50%;
+  width: 7px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--c-muted);
+  opacity: 0;
+}
+
+.vb-trim-sub {
+  margin: 18px 0 0;
+  font-size: var(--fs-label);
+  color: var(--c-muted);
+  text-align: center;
+}
+
+/* Before the intro hands over, the button waits under its cover. */
+html.js .vb-hero:not([data-go]) .vb-trim-cover {
+  transform: scaleX(1);
+}
+
+html.js .vb-trim-sub {
+  opacity: 0;
+}
+
+.vb-hero[data-go] .vb-trim-cover,
+.vb-hero[data-go] .vb-trimmer,
+.vb-hero[data-go] .vb-trim-guide {
+  will-change: transform, opacity;
+}
+
+.vb-hero[data-go] .vb-trim-cover {
+  animation: vb-trim-uncover var(--trim-dur) linear var(--trim-delay) both;
+}
+
+.vb-hero[data-go] .vb-trimmer {
+  animation: vb-trim-pass var(--trim-dur) linear var(--trim-delay) both;
+}
+
+.vb-hero[data-go] .vb-trim-guide {
+  animation: vb-trim-guide var(--trim-dur) linear var(--trim-delay) both;
+}
+
+.vb-hero[data-go] .vb-trimmer svg {
+  animation: vb-trim-buzz 70ms linear var(--trim-delay) 38; /* ≈ --trim-dur */
+}
+
+.vb-hero[data-go] .vb-trimmer i {
+  animation: vb-trim-chip 520ms var(--ease-out) var(--trim-delay) 5;
+}
+
+.vb-trimmer i:nth-of-type(2) { animation-delay: calc(var(--trim-delay) + 110ms) !important; --cx: -26px; --cy: -18px; --cr: -40deg; }
+.vb-trimmer i:nth-of-type(3) { animation-delay: calc(var(--trim-delay) + 220ms) !important; --cx: -34px; --cy: 20px; --cr: 70deg; }
+.vb-trimmer i:nth-of-type(4) { animation-delay: calc(var(--trim-delay) + 330ms) !important; --cx: -18px; --cy: 28px; --cr: 20deg; }
+.vb-trimmer i:nth-of-type(5) { animation-delay: calc(var(--trim-delay) + 440ms) !important; --cx: -30px; --cy: -26px; --cr: -80deg; }
+
+/* After the cut: the edge starts turning, the halo lights, the ring pulses,
+   and the line underneath fades up. */
+.vb-hero[data-go] .vb-trim-edge::before {
+  animation: vb-trim-spin 4s linear var(--trim-after) infinite;
+}
+
+.vb-hero[data-go] .vb-trim-halo {
+  animation: vb-trim-fade 900ms var(--ease-out) var(--trim-after) both;
+}
+
+.vb-hero[data-go] .vb-trim-halo::after {
+  animation: vb-trim-ring 2.4s var(--ease-out) calc(var(--trim-delay) + var(--trim-dur)) infinite;
+}
+
+.vb-hero[data-go] .vb-trim-sub {
+  animation: vb-trim-fade 900ms var(--ease-out) calc(var(--trim-delay) + var(--trim-dur) * 0.9) both;
+}
+
+html:not(.js) .vb-trim-halo {
+  opacity: 1;
+}
+
+/* One timeline: 0–18% the trimmer flies in, 18–82% it cuts across the button,
+   82–100% it leaves. The cover's scale is 1 minus the blade's position. */
+@keyframes vb-trim-pass {
+  0% { transform: translateX(-40%); opacity: 0; }
+  10% { opacity: 1; }
+  18% { transform: translateX(0%); }
+  82% { transform: translateX(100%); opacity: 1; }
+  100% { transform: translateX(140%); opacity: 0; }
+}
+
+@keyframes vb-trim-uncover {
+  0%, 18% { transform: scaleX(1); }
+  82%, 100% { transform: scaleX(0); }
+}
+
+/* The guide runs from -12% to 112% of the lane (124% wide), anchored on its
+   right end; its scale is what's left of it to the right of the blade. */
+@keyframes vb-trim-guide {
+  0% { transform: scaleX(1); opacity: 0; }
+  8% { opacity: 1; }
+  12.6% { transform: scaleX(1); }
+  18% { transform: scaleX(0.903); }
+  82% { transform: scaleX(0.097); opacity: 1; }
+  87.4% { transform: scaleX(0); }
+  100% { transform: scaleX(0); opacity: 0; }
+}
+
+@keyframes vb-trim-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes vb-trim-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes vb-trim-ring {
+  0% { opacity: 0.7; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.18, 1.5); }
+}
+
+@keyframes vb-trim-buzz {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(0.6px, -0.6px); }
+  50% { transform: translate(-0.4px, 0.5px); }
+  75% { transform: translate(0.5px, 0.4px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes vb-trim-chip {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0deg); }
+  20% { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(var(--cx, -22px), var(--cy, 12px)) rotate(var(--cr, 30deg)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vb-trimmer,
+  .vb-trim-guide,
+  .vb-trim-cover,
+  .vb-trim-halo::after {
+    display: none;
+  }
+  .vb-trim-halo,
+  html.js .vb-trim-sub {
+    opacity: 1;
+    animation: none !important;
+  }
+  .vb-trim-edge::before {
+    animation: none !important;
+  }
 }
 
 /* --- reviews ------------------------------------------------------------------ */
@@ -1049,6 +1346,22 @@ html.js .vb-hero:not([data-go]) .vb-hero-enter {
   text-align: center;
 }
 
+.vb-powered {
+  margin: 20px 0 0;
+  font-size: var(--fs-micro);
+  color: var(--c-faint);
+}
+
+.vb-powered a {
+  color: var(--c-muted);
+  text-decoration: none;
+  transition: color var(--dur) var(--ease-std);
+}
+
+.vb-powered a:hover {
+  color: var(--c-fg);
+}
+
 .vb-footer-mark {
   width: min(70vw, 420px);
   margin: 0 auto 32px;
@@ -1122,12 +1435,6 @@ html[data-intro="seen"] .vb-intro {
   display: block;
   width: 100%;
   height: 100%;
-}
-
-.vb-intro-name {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: var(--track-display);
 }
 
 /* --- pills ---------------------------------------------------------------- */
@@ -1260,54 +1567,6 @@ html[data-intro="seen"] .vb-intro {
 .vb-profile-actions {
   display: flex;
   gap: var(--gap);
-}
-
-.vb-services {
-  padding-top: var(--section-gap);
-}
-
-.vb-service-list {
-  border-radius: var(--radius-xl);
-  background: var(--c-surface);
-  border: var(--border) solid var(--c-line);
-  padding: var(--pad) var(--pad) 8px;
-}
-
-.vb-service-list ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.vb-service-group {
-  margin: 4px 4px 8px;
-}
-
-.vb-service-row {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
-  gap: var(--pad);
-  padding: 18px 4px;
-  border-top: var(--border) solid var(--c-line);
-}
-
-.vb-service-info {
-  display: grid;
-  gap: 2px;
-}
-
-.vb-service-name {
-  font-size: var(--fs-service);
-  font-weight: var(--weight-display);
-  letter-spacing: var(--track-display);
-  line-height: 1.05;
-}
-
-.vb-service-cost {
-  font-size: 20px;
-  font-weight: var(--weight-display);
-  font-variant-numeric: tabular-nums;
 }
 
 /* --- reviews ----------------------------------------------------------------- */
@@ -1559,7 +1818,7 @@ html.js .vb-reveal:not([data-shown]) .vb-bar i {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .vb-map {
-    grid-row: span 2;
+    grid-row: span 3;
   }
 }
 
@@ -1647,27 +1906,6 @@ html.js .vb-reveal:not([data-shown]) .vb-bar i {
   content: " · today";
   color: var(--c-accent);
   font-weight: 400;
-}
-
-.vb-barber-row {
-  display: flex;
-  align-items: center;
-  gap: var(--pad);
-}
-
-.vb-barber-avatar {
-  display: grid;
-  place-items: center;
-  width: 64px;
-  height: 64px;
-  border-radius: var(--radius-pill);
-  background: var(--c-fg);
-  color: var(--c-bg);
-}
-
-.vb-barber-avatar svg {
-  width: 34px;
-  height: auto;
 }
 
 /* --- booking sheet ------------------------------------------------------------- */

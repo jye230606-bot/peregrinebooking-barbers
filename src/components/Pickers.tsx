@@ -2,13 +2,21 @@
 
 import type { DateKey, Service } from "@/config/tenant";
 import { bookingWindow, gridStarts, openingOn } from "@/booking/rules";
-import { dateLabel, shiftDays, timeLabel, weekdayName, weekdayOf, weekdayShort } from "@/booking/time";
+import { useTenant } from "./TenantContext";
+import { dateLabel, shiftDays, shopMinutes, timeLabel, weekdayName, weekdayOf, weekdayShort } from "@/booking/time";
 
 /**
  * The date grid and the time grid, shared by the booking flow and the
  * manage page. Both use the rules module the server enforces, so a day or a
  * time offered here is one the server will accept unless the diary changed.
  */
+
+// Times are split by the shop's clock: before noon, before 5pm, after.
+const PARTS = [
+  { name: "Morning", until: 12 * 60 },
+  { name: "Afternoon", until: 17 * 60 },
+  { name: "Evening", until: 24 * 60 },
+];
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const WEEK = [1, 2, 3, 4, 5, 6, 0]; // Monday first
@@ -22,7 +30,8 @@ export function DatePicker({
   value: DateKey | null;
   onChange: (key: DateKey) => void;
 }) {
-  const days = bookingWindow(now);
+  const cfg = useTenant();
+  const days = bookingWindow(now, cfg);
   const first = days[0];
   const last = days[days.length - 1];
   // Pad the grid out to whole Monday-to-Sunday weeks.
@@ -43,7 +52,7 @@ export function DatePicker({
         {cells.map((key, i) => {
           if (key < first || key > last) return <span key={key} className="vb-cal-spacer" />;
           const [, m, d] = key.split("-").map(Number);
-          const open = openingOn(key) !== null;
+          const open = openingOn(key, cfg) !== null;
           const showMonth = d === 1 || i === 0 || key === first;
           return (
             <button
@@ -83,10 +92,11 @@ export function TimeGrid({
   value: string | null;
   onChange: (iso: string) => void;
 }) {
+  const cfg = useTenant();
   if (free === null) return <p className="vb-label">Finding free times…</p>;
 
-  const hours = openingOn(date);
-  const all = gridStarts(date, service).filter((t) => t > now);
+  const hours = openingOn(date, cfg);
+  const all = gridStarts(date, service, cfg).filter((t) => t > now);
   const freeSet = new Set(free);
 
   if (!hours || freeSet.size === 0) {
@@ -97,26 +107,42 @@ export function TimeGrid({
     );
   }
 
+  const groups = PARTS.map((part, p) => ({
+    name: part.name,
+    times: all.filter((t) => {
+      const m = shopMinutes(t);
+      return m < part.until && (p === 0 || m >= PARTS[p - 1].until);
+    }),
+  })).filter((g) => g.times.length > 0);
+
+  let i = 0; // one stagger across all groups
   return (
-    <div className="vb-times" role="group" aria-label={`Times on ${dateLabel(date)}`}>
-      {all.map((t, i) => {
-        const iso = t.toISOString();
-        const available = freeSet.has(iso);
-        return (
-          <button
-            key={iso}
-            type="button"
-            className="vb-btn vb-rise"
-            style={{ "--i": i } as React.CSSProperties}
-            disabled={!available}
-            aria-pressed={value === iso}
-            aria-label={`${timeLabel(t)}${available ? "" : ", unavailable"}`}
-            onClick={() => onChange(iso)}
-          >
-            {timeLabel(t)}
-          </button>
-        );
-      })}
+    <div className="vb-time-groups">
+      {groups.map((g) => (
+        <div key={g.name} className="vb-time-group">
+          <h3 className="vb-label vb-time-group-h">{g.name}</h3>
+          <div className="vb-times" role="group" aria-label={`${g.name} times on ${dateLabel(date)}`}>
+            {g.times.map((t) => {
+              const iso = t.toISOString();
+              const available = freeSet.has(iso);
+              return (
+                <button
+                  key={iso}
+                  type="button"
+                  className="vb-btn vb-rise"
+                  style={{ "--i": i++ } as React.CSSProperties}
+                  disabled={!available}
+                  aria-pressed={value === iso}
+                  aria-label={`${timeLabel(t)}${available ? "" : ", unavailable"}`}
+                  onClick={() => onChange(iso)}
+                >
+                  {timeLabel(t)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

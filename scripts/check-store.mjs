@@ -11,9 +11,14 @@
  * Checks: insert and read back; tenant scoping; and the race — two parallel
  * inserts for the same slot, where exactly one may succeed and the other must
  * come back as a clean SlotTaken from the exclusion constraint.
+ *
+ * With SUPABASE_ANON_KEY set it also checks the console's row-level security:
+ * two throwaway sign-ins, one a member of the self-test shop and one not.
+ * The member sees the shop's booking; the other reads nothing. Both users are
+ * deleted afterwards.
  */
 import nextEnv from "@next/env";
-import { supabaseStore } from "../src/booking/server/supabaseStore.ts";
+import { SCHEMA, supabaseStore } from "../src/booking/server/supabaseStore.ts";
 import { SlotTaken } from "../src/booking/server/store.ts";
 
 nextEnv.loadEnvConfig(process.cwd());
@@ -26,7 +31,13 @@ if (!url?.startsWith("https://") || !key) {
 
 const SLUG = "vbarbers-selftest";
 const rest = `${url}/rest/v1`;
-const headers = { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
+const headers = {
+  apikey: key,
+  Authorization: `Bearer ${key}`,
+  "Content-Type": "application/json",
+  "Accept-Profile": SCHEMA,
+  "Content-Profile": SCHEMA,
+};
 
 async function call(path, init = {}) {
   const res = await fetch(`${rest}/${path}`, { ...init, headers: { ...headers, ...init.headers } });
@@ -38,6 +49,30 @@ async function call(path, init = {}) {
 const ok = (msg) => console.log(`  ✔ ${msg}`);
 let tenantId = null;
 let failed = false;
+const users = [];
+const anon = process.env.SUPABASE_ANON_KEY;
+const auth = (path, init = {}, bearer = key, apikey = key) =>
+  fetch(`${url}/auth/v1/${path}`, {
+    ...init,
+    headers: { apikey, Authorization: `Bearer ${bearer}`, "Content-Type": "application/json" },
+  }).then(async (r) => {
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(`auth ${path.split("?")[0]} → ${r.status} ${JSON.stringify(body)}`);
+    return body;
+  });
+
+/** A confirmed throwaway user, signed in with a password: an ordinary session. */
+async function throwawaySession(label) {
+  const email = `selftest+${label}-${crypto.randomUUID().slice(0, 8)}@peregrinepartners.space`;
+  const password = crypto.randomUUID();
+  const user = await auth("admin/users", { method: "POST", body: JSON.stringify({ email, password, email_confirm: true }) });
+  users.push(user.id);
+  const session = await auth("token?grant_type=password", { method: "POST", body: JSON.stringify({ email, password }) }, anon, anon);
+  return { id: user.id, token: session.access_token };
+}
+
+const asUser = (token, path) =>
+  fetch(`${rest}/${path}`, { headers: { apikey: anon, Authorization: `Bearer ${token}`, "Accept-Profile": SCHEMA } }).then((r) => r.json());
 
 try {
   console.log(`Self-test tenant "${SLUG}" on ${new URL(url).host}`);
@@ -94,17 +129,35 @@ try {
   const other = await supabaseStore({ url, serviceKey: key, tenantSlug: "vbarbers" }).listBookings(range).catch(() => []);
   if (other.some((b) => b.customer.name.startsWith("Self test"))) throw new Error("self-test rows visible under vbarbers");
   ok("rows stay inside their tenant");
+
+  if (!anon) {
+    console.log("  (set SUPABASE_ANON_KEY to also check member access)");
+  } else {
+    const member = await throwawaySession("member");
+    const stranger = await throwawaySession("stranger");
+    await call("members", { method: "POST", body: JSON.stringify({ tenant_id: tenantId, user_id: member.id }) });
+    const q = `bookings?tenant_id=eq.${tenantId}&status=eq.confirmed&select=id`;
+    const mine = await asUser(member.token, q);
+    if (!Array.isArray(mine) || mine.length !== 1) throw new Error(`member read ${JSON.stringify(mine)}`);
+    ok("a member reads their shop");
+    const theirs = await asUser(stranger.token, q);
+    if (!Array.isArray(theirs) || theirs.length !== 0) throw new Error(`non-member read ${JSON.stringify(theirs)}`);
+    ok("a non-member reads nothing");
+  }
 } catch (e) {
   failed = true;
   console.error(`  ✖ ${e.message}`);
 } finally {
   if (tenantId) {
     // Children first: the foreign keys are ON DELETE RESTRICT.
-    for (const table of ["bookings", "blocks", "customers", "services", "weekly_hours", "date_overrides", "reviews"]) {
+    for (const table of ["members", "bookings", "blocks", "customers", "services", "weekly_hours", "date_overrides", "reviews"]) {
       await call(`${table}?tenant_id=eq.${tenantId}`, { method: "DELETE" }).catch((e) => console.error(`  cleanup ${table}: ${e.message}`));
     }
     await call(`tenants?id=eq.${tenantId}`, { method: "DELETE" }).catch((e) => console.error(`  cleanup tenant: ${e.message}`));
     console.log("  cleaned up the self-test tenant");
+  }
+  for (const id of users) {
+    await auth(`admin/users/${id}`, { method: "DELETE" }).catch((e) => console.error(`  cleanup user: ${e.message}`));
   }
 }
 

@@ -21,15 +21,16 @@ const b64 = (b: Buffer) => b.toString('base64url')
 export type OwnerAuth = { passwordHash: string | null; secret: string }
 
 // Outside production only, a missing secret is replaced per process: sessions
-// then end on restart, which is harmless locally.
-const devSecret = b64(randomBytes(32))
+// then end on restart, which is harmless locally. Made on first use, because
+// Workers refuse random values at module scope.
+let devSecret: string | undefined
 
 /** Null when owner sign-in must refuse to work at all. */
 export function ownerAuth(env: NodeJS.ProcessEnv = process.env): OwnerAuth | null {
   const passwordHash = env.OWNER_PASSWORD_HASH || null
   const secret = env.SESSION_SECRET || null
   if (env.NODE_ENV === 'production' && (!passwordHash || !secret)) return null
-  return { passwordHash, secret: secret ?? devSecret }
+  return { passwordHash, secret: secret ?? (devSecret ??= b64(randomBytes(32))) }
 }
 
 // --- password ---------------------------------------------------------------

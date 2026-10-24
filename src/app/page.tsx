@@ -1,9 +1,11 @@
+import { config, tenantConfig } from "@/booking/server/config";
 import { BookingSheet } from "@/components/BookingSheet";
 import { Hero, TopBar } from "@/components/Hero";
 import { Info } from "@/components/Info";
 import { Intro } from "@/components/Intro";
 import { Profile } from "@/components/Profile";
 import { Reviews } from "@/components/Reviews";
+import { TenantProvider } from "@/components/TenantContext";
 
 /**
  * The only public page: Vance's profile — everything his Booksy page says,
@@ -11,12 +13,13 @@ import { Reviews } from "@/components/Reviews";
  * pages to navigate to; it's where his Instagram bio link lands.
  */
 
-// Rebuilt hourly, so past special dates fall off.
-export const revalidate = 3600;
+// Rebuilt every minute, so hours and days off Vance changes show quickly.
+export const revalidate = 60;
 
-export default function Home() {
+export default async function Home() {
+  const cfg = await tenantConfig(config().store);
   return (
-    <>
+    <TenantProvider value={cfg}>
       <Intro />
       <TopBar />
       <main id="booking">
@@ -26,6 +29,6 @@ export default function Home() {
         <Info />
       </main>
       <BookingSheet />
-    </>
+    </TenantProvider>
   );
 }

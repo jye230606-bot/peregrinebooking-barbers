@@ -92,5 +92,7 @@ export function fileStore(file: string): BookingStore {
       }),
 
     exclusive: (job) => lock(job),
+    // Local development runs on the schedule in src/config/tenant.ts.
+    loadSchedule: async () => null,
   }
 }

@@ -2,19 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MarkPaths } from "./Mark";
-import { tenant } from "@/config/tenant";
 import { announceIntroDone } from "./Motion";
 
 /**
  * The intro, ~2.2 s, once per session.
  *
  *   pool  0–950 ms     electric-blue liquid wells up from the bottom and
- *                      engulfs the mark and the name; under it, the type
+ *                      engulfs the mark; under it, the mark
  *                      reads black (a mask, not opacity)
  *   hold  950–1100 ms  the screen is all liquid; the black backdrop goes,
  *                      unseen, leaving the booking page behind the liquid
  *   lift  1100–2200 ms the liquid breaks into droplets that float up and
- *                      away, carrying the type, and the page shows through
+ *                      away, carrying the mark, and the page shows through
  *
  * Gooeyness is an SVG filter (blur, then a hard alpha threshold) over plain
  * circles moved by requestAnimationFrame — no animation library, no WebGL.
@@ -31,29 +30,19 @@ const LIFT_MS = 1100;
 const TOTAL_MS = POOL_MS + HOLD_MS + LIFT_MS;
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-// The composition: the mark (1040×1020 traced units) over VANCE, in its own
-// coordinate box, scaled to fit any screen by the nested <svg>.
+// The composition: the mark (1040×1020 traced units) centred in its own
+// coordinate box, scaled to fit any screen by the nested <svg>. No name: the
+// mark is the brand.
 const COMP_VIEWBOX = "-50 -50 1500 1180";
 const MARK_SCALE = 0.75;
+const MARK_TOP = 540 - (1020 * MARK_SCALE) / 2;
 
 function Composition() {
   return (
     <svg x="0" y="0" width="100%" height="100%" viewBox={COMP_VIEWBOX} preserveAspectRatio="xMidYMid meet" overflow="visible">
-      <g transform={`translate(${(1400 - 1040 * MARK_SCALE) / 2} 0) scale(${MARK_SCALE})`}>
+      <g transform={`translate(${(1400 - 1040 * MARK_SCALE) / 2} ${MARK_TOP}) scale(${MARK_SCALE})`}>
         <MarkPaths />
       </g>
-      <text
-        className="vb-intro-name"
-        x="700"
-        y="1080"
-        fontSize="360"
-        textAnchor="middle"
-        textLength="1340"
-        lengthAdjust="spacingAndGlyphs"
-        fill="currentColor"
-      >
-        {tenant.barber.toUpperCase()}
-      </text>
     </svg>
   );
 }

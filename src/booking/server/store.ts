@@ -1,4 +1,5 @@
 import type { Block, Booking, Range } from '../types.ts'
+import type { Schedule } from '../schedule.ts'
 
 /**
  * Where the diary lives. Everything the API enforces sits above this line;
@@ -22,6 +23,8 @@ export interface BookingStore {
    * refuses an overlapping write inside Postgres whatever the app thought.
    */
   exclusive<T>(job: () => Promise<T>): Promise<T>
+  /** The shop's services, hours, closures and rules as stored, or null to use the built-in ones. */
+  loadSchedule(): Promise<Schedule | null>
 }
 
 /** The store refused a write because the slot is held. The API answers 409 "taken". */

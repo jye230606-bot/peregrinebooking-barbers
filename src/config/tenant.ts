@@ -34,12 +34,12 @@ export type TenantConfig = {
   name: string
   barber: string
   timezone: string
-  address: { street: string; locality: string; region: string; postcode: string }
+  /** The suburb, which is all the public site shows. The street is in `address.ts`. */
+  address: { locality: string; region: string }
   instagram: string
   booksy: string
   /** As Booksy shows it: the handle, and the tag under the rating. */
   booksyName: string
-  booksyTag: string
   payment: string
   services: Service[]
   /** Index 0 is Sunday. `null` is closed all day. */
@@ -59,12 +59,11 @@ export const tenant: TenantConfig = {
   name: 'V Barbers',
   barber: 'Vance',
   timezone: 'Australia/Melbourne',
-  address: { street: '41 Flowerdale Road', locality: 'Hampton East', region: 'VIC', postcode: '3188' },
+  address: { locality: 'Hampton East', region: 'VIC' },
   instagram: 'vbarbersz',
   booksy: 'vbarbersz',
   booksyName: 'vbarbersz',
-  booksyTag: 'Entrepreneur',
-  payment: 'Pay by PayID or cash at your appointment.',
+  payment: 'Pay by card or cash at your appointment.',
 
   services: [
     { id: '74cdb172-7b61-5260-9f17-9e6d24c2e17d', name: 'Haircut', durationMin: 45, priceCents: 5000 },
@@ -90,13 +89,13 @@ export const tenant: TenantConfig = {
   ],
 
   rules: {
-    slotMinutes: 15,
+    slotMinutes: 45, // Vance: fixed 45-minute spots, ~11 a day
     bufferMinutes: 0, // confirm with Vance
     minNoticeMinutes: 120, // confirm with Vance
-    maxAdvanceDays: 42, // confirm with Vance
+    maxAdvanceDays: 21, // Vance: three weeks ahead
     guestChangeCutoffHours: 12, // confirm with Vance
   },
 }
 
-export const fullAddress = (t: TenantConfig = tenant) =>
-  `${t.address.street}, ${t.address.locality} ${t.address.region} ${t.address.postcode}`
+/** "Hampton East, VIC": where the shop is, without the street. */
+export const area = (t: TenantConfig = tenant) => `${t.address.locality}, ${t.address.region}`

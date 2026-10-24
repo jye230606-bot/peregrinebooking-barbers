@@ -1,4 +1,4 @@
-import { tenant } from '../../config/tenant.ts'
+import type { TenantConfig } from '../../config/tenant.ts'
 import type { Block, Booking } from '../types.ts'
 import {
   checkBlock,
@@ -29,7 +29,7 @@ import {
 import { notify } from './email.ts'
 import { SlotTaken, type BookingStore } from './store.ts'
 import { newManageToken, tokenMatches } from './tokens.ts'
-import type { Config } from './config.ts'
+import { tenantConfig, type Config } from './config.ts'
 
 /**
  * The booking API, written against plain request/response shapes; the Next
@@ -98,17 +98,17 @@ export type GuestBooking = {
   canChange: boolean
 }
 
-export function guestView(b: Booking, now = new Date()): GuestBooking {
+export function guestView(b: Booking, now: Date, cfg: TenantConfig): GuestBooking {
   return {
     id: b.id,
     serviceId: b.serviceId,
-    serviceName: serviceById(b.serviceId)?.name ?? 'Appointment',
+    serviceName: serviceById(b.serviceId, cfg)?.name ?? 'Appointment',
     startsAt: b.startsAt,
     endsAt: b.endsAt,
     priceCents: b.priceCentsSnapshot,
     status: b.status,
     name: b.customer.name,
-    canChange: guestCanChange(b, now),
+    canChange: guestCanChange(b, now, cfg),
   }
 }
 
@@ -126,6 +126,7 @@ const icsUrl = (origin: string, id: string, token: string) =>
 /** Shared by the guest and the owner: rules, then the write, under the lock. */
 async function create(
   config: Config,
+  cfg: TenantConfig,
   input: { serviceId?: unknown; startsAt?: unknown },
   details: Details,
   actor: 'guest' | 'owner',
@@ -139,11 +140,11 @@ async function create(
     const start = new Date(startsAt)
     if (Number.isNaN(start.getTime())) return { res: fail(400, 'That is not a valid time.', 'bad-time') }
     const ctx = await contextAround(store, start, now, { actor })
-    const violation = checkBooking({ serviceId, startsAt }, ctx)
+    const violation = checkBooking({ serviceId, startsAt }, ctx, cfg)
     if (violation) return { res: fail(409, violation.message, violation.code) }
 
-    const service = serviceById(serviceId)!
-    const span = spanOf(start, service)
+    const service = serviceById(serviceId, cfg)!
+    const span = spanOf(start, service, cfg)
     const { token, hash } = newManageToken()
     const stamp = now.toISOString()
     const booking: Booking = {
@@ -175,6 +176,8 @@ async function create(
 
 export async function handle(req: ApiRequest, config: Config): Promise<ApiResponse> {
   const { store } = config
+  // Services, hours, closures and rules as Vance has them set right now.
+  const cfg = await tenantConfig(store)
   const parts = req.path.split('/').filter(Boolean)
   const body = (req.body ?? {}) as Record<string, unknown>
   const mutating = req.method !== 'GET' && req.method !== 'HEAD'
@@ -187,12 +190,12 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
   // --- public: free start times ---------------------------------------------
   if (parts[0] === 'availability' && parts.length === 1 && req.method === 'GET') {
     const date = req.query.date ?? ''
-    const service = serviceById(req.query.service ?? '')
+    const service = serviceById(req.query.service ?? '', cfg)
     if (!DATE.test(date)) return fail(400, 'A date in YYYY-MM-DD form is required.')
     if (!service) return fail(400, 'Choose a service.')
     const now = new Date()
     const ctx = await contextAround(store, at(date, '12:00'), now)
-    const starts = freeStarts(date, service, ctx).map((d) => d.toISOString())
+    const starts = freeStarts(date, service, ctx, cfg).map((d) => d.toISOString())
     return json(200, { date, serviceId: service.id, starts }, { 'Cache-Control': 'no-store' })
   }
 
@@ -201,12 +204,12 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
     if (parts.length === 1 && req.method === 'POST') {
       const checked = checkDetails(body, { requireEmail: true })
       if (!checked.ok) return fail(400, checked.violation.message, checked.violation.code)
-      const out = await create(config, body, checked.details, 'guest')
+      const out = await create(config, cfg, body, checked.details, 'guest')
       if (!out.booking || !out.token) return out.res
       const link = manageUrl(config.siteUrl ?? req.origin, out.booking.id, out.token)
-      await notify(config.mailer, 'created', out.booking, { manageUrl: link, ownerEmail: config.ownerEmail })
+      await notify(config.mailer, 'created', out.booking, { cfg, siteUrl: config.siteUrl, manageUrl: link, ownerEmail: config.ownerEmail })
       return json(201, {
-        booking: guestView(out.booking),
+        booking: guestView(out.booking, new Date(), cfg),
         manageUrl: link,
         icsUrl: icsUrl(config.siteUrl ?? req.origin, out.booking.id, out.token),
       })
@@ -217,7 +220,7 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
 
     if (parts.length === 2 && req.method === 'GET') {
       const b = await guestBooking(store, id, token)
-      return b ? json(200, guestView(b)) : fail(404, 'No booking matches that link.')
+      return b ? json(200, guestView(b, new Date(), cfg)) : fail(404, 'No booking matches that link.')
     }
 
     if (parts.length === 3 && parts[2] === 'ics' && req.method === 'GET') {
@@ -228,7 +231,7 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
         raw: bookingIcs(b),
         headers: {
           'Content-Type': 'text/calendar; charset=utf-8',
-          'Content-Disposition': `attachment; filename="${tenant.slug}-booking.ics"`,
+          'Content-Disposition': `attachment; filename="${cfg.slug}-booking.ics"`,
           'Cache-Control': 'no-store',
         },
       }
@@ -240,20 +243,20 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
         const b = await guestBooking(store, id, token)
         if (!b) return { res: fail(404, 'No booking matches that link.') }
         if (b.status !== 'confirmed') return { res: fail(409, 'This booking is already cancelled.', 'not-confirmed') }
-        if (!guestCanChange(b, now)) {
+        if (!guestCanChange(b, now, cfg)) {
           return {
             res: fail(
               403,
-              `This booking is less than ${tenant.rules.guestChangeCutoffHours} hours away, so it can’t be changed online. Contact @${tenant.instagram} on Instagram.`,
+              `This booking is less than ${cfg.rules.guestChangeCutoffHours} hours away, so it can’t be changed online. Contact @${cfg.instagram} on Instagram.`,
               'cutoff',
             ),
           }
         }
         const cancelled: Booking = { ...b, status: 'cancelled', cancelledAt: now.toISOString(), updatedAt: now.toISOString() }
         await store.updateBooking(cancelled)
-        return { res: json(200, guestView(cancelled, now)), booking: cancelled }
+        return { res: json(200, guestView(cancelled, now, cfg)), booking: cancelled }
       })
-      if (out.booking) await notify(config.mailer, 'cancelled-by-guest', out.booking, { ownerEmail: config.ownerEmail })
+      if (out.booking) await notify(config.mailer, 'cancelled-by-guest', out.booking, { cfg, siteUrl: config.siteUrl, ownerEmail: config.ownerEmail })
       return out.res
     }
 
@@ -264,11 +267,11 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
         const b = await guestBooking(store, id, token)
         if (!b) return { res: fail(404, 'No booking matches that link.') }
         if (b.status !== 'confirmed') return { res: fail(409, 'This booking is cancelled.', 'not-confirmed') }
-        if (!guestCanChange(b, now)) {
+        if (!guestCanChange(b, now, cfg)) {
           return {
             res: fail(
               403,
-              `This booking is less than ${tenant.rules.guestChangeCutoffHours} hours away, so it can’t be changed online. Contact @${tenant.instagram} on Instagram.`,
+              `This booking is less than ${cfg.rules.guestChangeCutoffHours} hours away, so it can’t be changed online. Contact @${cfg.instagram} on Instagram.`,
               'cutoff',
             ),
           }
@@ -276,9 +279,9 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
         const start = new Date(startsAt)
         if (Number.isNaN(start.getTime())) return { res: fail(400, 'That is not a valid time.', 'bad-time') }
         const ctx = await contextAround(store, start, now, { ignoreId: b.id })
-        const violation = checkBooking({ serviceId: b.serviceId, startsAt }, ctx)
+        const violation = checkBooking({ serviceId: b.serviceId, startsAt }, ctx, cfg)
         if (violation) return { res: fail(409, violation.message, violation.code) }
-        const span = spanOf(start, serviceById(b.serviceId)!)
+        const span = spanOf(start, serviceById(b.serviceId, cfg)!, cfg)
         const moved: Booking = {
           ...b,
           startsAt: span.start.toISOString(),
@@ -292,10 +295,10 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
           if (e instanceof SlotTaken) return { res: fail(409, TAKEN_MESSAGE, 'taken') }
           throw e
         }
-        return { res: json(200, guestView(moved, now)), booking: moved }
+        return { res: json(200, guestView(moved, now, cfg)), booking: moved }
       })
       if (out.booking) {
-        await notify(config.mailer, 'rescheduled', out.booking, {
+        await notify(config.mailer, 'rescheduled', out.booking, { cfg, siteUrl: config.siteUrl,
           manageUrl: manageUrl(config.siteUrl ?? req.origin, out.booking.id, String(token)),
           ownerEmail: config.ownerEmail,
         })
@@ -347,11 +350,11 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
     if (parts[1] === 'bookings' && parts.length === 2 && req.method === 'POST') {
       const checked = checkDetails(body, { requireEmail: false })
       if (!checked.ok) return fail(400, checked.violation.message, checked.violation.code)
-      const out = await create(config, body, checked.details, 'owner')
+      const out = await create(config, cfg, body, checked.details, 'owner')
       if (!out.booking || !out.token) return out.res
       const link = manageUrl(config.siteUrl ?? req.origin, out.booking.id, out.token)
       // The customer gets a confirmation if the owner took an email; Vance needs no alert for his own booking.
-      await notify(config.mailer, 'created', out.booking, { manageUrl: link })
+      await notify(config.mailer, 'created', out.booking, { cfg, siteUrl: config.siteUrl, manageUrl: link })
       return json(201, { id: out.booking.id })
     }
 
@@ -367,7 +370,7 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
         await store.updateBooking(cancelled)
         return { res: json(200, { ok: true }), booking: cancelled }
       })
-      if (out.booking) await notify(config.mailer, 'cancelled-by-owner', out.booking, {})
+      if (out.booking) await notify(config.mailer, 'cancelled-by-owner', out.booking, { cfg, siteUrl: config.siteUrl })
       return out.res
     }
 

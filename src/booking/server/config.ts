@@ -1,6 +1,7 @@
 import path from 'node:path'
-import { tenant } from '../../config/tenant.ts'
-import { resendMailer, type Mailer } from './email.ts'
+import { tenant, type TenantConfig } from '../../config/tenant.ts'
+import { withSchedule } from '../schedule.ts'
+import { mailerFromEnv, type Mailer } from './email.ts'
 import { fileStore } from './fileStore.ts'
 import { supabaseStore } from './supabaseStore.ts'
 import type { BookingStore } from './store.ts'
@@ -13,7 +14,7 @@ import type { BookingStore } from './store.ts'
 
 export type Config = {
   store: BookingStore
-  /** Null until RESEND_API_KEY and BOOKING_FROM_EMAIL are set; bookings still work. */
+  /** Null until a provider and BOOKING_FROM_EMAIL are set; bookings still work. */
   mailer: Mailer | null
   ownerEmail?: string
   /** Absolute origin for links in emails; falls back to the request's own. */
@@ -37,6 +38,24 @@ export function storeFromEnv(env: NodeJS.ProcessEnv = process.env): BookingStore
   throw new Error(`STORE must be "file" or "supabase", not "${kind}".`)
 }
 
+const SCHEDULE_TTL_MS = 60_000
+const schedules = new WeakMap<BookingStore, { at: number; value: Promise<TenantConfig> }>()
+
+/**
+ * The shop's config in force now: the brand from code, with the services,
+ * hours, closures and rules Vance keeps in the console laid over it. Read at
+ * most once a minute per store, so a change shows within a minute; a failed
+ * read isn't kept.
+ */
+export function tenantConfig(store: BookingStore, now = Date.now()): Promise<TenantConfig> {
+  const hit = schedules.get(store)
+  if (hit && now - hit.at < SCHEDULE_TTL_MS) return hit.value
+  const value = store.loadSchedule().then((s) => withSchedule(tenant, s))
+  schedules.set(store, { at: now, value })
+  value.catch(() => schedules.delete(store))
+  return value
+}
+
 let cached: Config | null = null
 
 export function config(): Config {
@@ -44,7 +63,7 @@ export function config(): Config {
   const env = process.env
   cached = {
     store: storeFromEnv(env),
-    mailer: resendMailer(env),
+    mailer: mailerFromEnv(env),
     ownerEmail: env.OWNER_EMAIL || undefined,
     siteUrl: env.SITE_URL || undefined,
   }

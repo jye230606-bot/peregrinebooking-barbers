@@ -1,4 +1,5 @@
-import { fullAddress, tenant, type TenantConfig } from '../config/tenant.ts'
+import { tenant, type TenantConfig } from '../config/tenant.ts'
+import { fullAddress } from '../config/address.ts'
 import type { Booking } from './types.ts'
 import { serviceById } from './rules.ts'
 

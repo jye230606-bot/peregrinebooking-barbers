@@ -5,24 +5,6 @@ import { openBooking } from "./BookingSheet";
 
 /** The small client-side buttons the server-rendered profile needs. */
 
-export function BookButton({
-  serviceId,
-  label = "Book",
-  className = "vb-pill",
-  children,
-}: {
-  serviceId?: string;
-  label?: string;
-  className?: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <button type="button" className={className} onClick={() => openBooking(serviceId)} aria-label={label}>
-      {children ?? label}
-    </button>
-  );
-}
-
 /** Share the page: the phone's own sheet where there is one, else copy the link. */
 export function ShareButton({ title }: { title: string }) {
   const [copied, setCopied] = useState(false);
@@ -46,6 +28,15 @@ export function ShareButton({ title }: { title: string }) {
         <path d="M8 10.5V2M4.5 5.5L8 2l3.5 3.5M3 9v4.5h10V9" />
       </svg>
       <span aria-live="polite">{copied ? "Link copied" : "Share"}</span>
+    </button>
+  );
+}
+
+/** Opens the booking sheet. */
+export function BookButton({ className = "vb-pill" }: { className?: string }) {
+  return (
+    <button type="button" className={className} onClick={() => openBooking()}>
+      Make a booking <span aria-hidden="true">→</span>
     </button>
   );
 }

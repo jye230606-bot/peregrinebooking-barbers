@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { tenant, type DateKey } from "@/config/tenant";
 import { gridStarts, openingOn, serviceById } from "@/booking/rules";
+import { useTenant } from "./TenantContext";
 import { dateLabel, shiftDays, shopDateKey, timeLabel, weekdayOf } from "@/booking/time";
 import type { Block, Booking } from "@/booking/types";
 import { api, money } from "./client-api";
@@ -54,6 +55,7 @@ type View = "day" | "week";
 const monday = (key: DateKey) => shiftDays(key, -((weekdayOf(key) + 6) % 7));
 
 export function OwnerConsole({ today, feedPath }: { today: DateKey; feedPath: string | null }) {
+  const cfg = useTenant();
   const router = useRouter();
   const [view, setView] = useState<View>("day");
   const [day, setDay] = useState<DateKey>(today);
@@ -150,7 +152,7 @@ export function OwnerConsole({ today, feedPath }: { today: DateKey; feedPath: st
         days.map((key) => {
           const bookings = diary.bookings.filter((b) => shopDateKey(new Date(b.startsAt)) === key);
           const blocks = diary.blocks.filter((b) => shopDateKey(new Date(b.startsAt)) === key);
-          const hours = openingOn(key);
+          const hours = openingOn(key, cfg);
           const live = bookings.filter((b) => b.status === "confirmed");
           return (
             <section key={key} className="vb-block vb-stack">
@@ -164,7 +166,7 @@ export function OwnerConsole({ today, feedPath }: { today: DateKey; feedPath: st
               </div>
               {bookings.length === 0 && blocks.length === 0 && <p className="vb-label" style={{ margin: 0 }}>Nothing booked.</p>}
               {bookings.map((b) => {
-                const service = serviceById(b.serviceId);
+                const service = serviceById(b.serviceId, cfg);
                 const cancelled = b.status !== "confirmed";
                 return (
                   <article key={b.id} className="vb-block vb-stack" style={{ textDecoration: cancelled ? "line-through" : undefined }}>
@@ -289,11 +291,12 @@ function BlockForm({ day, onSubmit }: { day: DateKey; onSubmit: (body: unknown) 
 }
 
 function ManualBooking({ day, onSubmit }: { day: DateKey; onSubmit: (body: unknown) => Promise<boolean> }) {
-  const [serviceId, setServiceId] = useState(tenant.services[0].id);
+  const cfg = useTenant();
+  const [serviceId, setServiceId] = useState(cfg.services[0].id);
   const [date, setDate] = useState(day);
   useEffect(() => setDate(day), [day]);
-  const service = serviceById(serviceId)!;
-  const starts = gridStarts(date, service);
+  const service = serviceById(serviceId, cfg)!;
+  const starts = gridStarts(date, service, cfg);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -318,7 +321,7 @@ function ManualBooking({ day, onSubmit }: { day: DateKey; onSubmit: (body: unkno
       <label className="vb-field">
         <span className="vb-label">Service</span>
         <select className="vb-input" value={serviceId} onChange={(e) => setServiceId(e.target.value)}>
-          {tenant.services.map((s) => (
+          {cfg.services.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name} · {money(s.priceCents)} · {s.durationMin} min
             </option>

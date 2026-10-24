@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fullAddress, tenant, type DateKey } from "@/config/tenant";
+import { tenant, type DateKey } from "@/config/tenant";
 import { serviceById } from "@/booking/rules";
+import { useTenant } from "./TenantContext";
 import { dateLabel, shopDateKey, timeLabel } from "@/booking/time";
 import type { GuestBooking } from "@/booking/server/api";
 import { api, money } from "./client-api";
@@ -15,7 +16,8 @@ import { DatePicker, Step, TimeGrid } from "./Pickers";
 
 type Mode = "view" | "cancel" | "move";
 
-export function ManageBooking({ initial, token }: { initial: GuestBooking; token: string }) {
+export function ManageBooking({ initial, token, address }: { initial: GuestBooking; token: string; address: string }) {
+  const cfg = useTenant();
   const [booking, setBooking] = useState(initial);
   const [mode, setMode] = useState<Mode>("view");
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +29,7 @@ export function ManageBooking({ initial, token }: { initial: GuestBooking; token
   const [free, setFree] = useState<string[] | null>(null);
   const [refresh, setRefresh] = useState(0);
 
-  const service = serviceById(booking.serviceId);
+  const service = serviceById(booking.serviceId, cfg);
   const key = shopDateKey(new Date(booking.startsAt));
   const ics = `/api/booking/bookings/${booking.id}/ics?t=${encodeURIComponent(token)}`;
   const contact = `https://www.instagram.com/${tenant.instagram}/`;
@@ -110,7 +112,7 @@ export function ManageBooking({ initial, token }: { initial: GuestBooking; token
           <dt className="vb-label">Price</dt>
           <dd>{money(booking.priceCents)}</dd>
           <dt className="vb-label">Where</dt>
-          <dd>{fullAddress()}</dd>
+          <dd>{address}</dd>
         </dl>
         {!cancelled && <p style={{ margin: 0 }}>{tenant.payment}</p>}
         {notice && (
@@ -133,7 +135,7 @@ export function ManageBooking({ initial, token }: { initial: GuestBooking; token
       {!cancelled && !booking.canChange && (
         <section className="vb-block vb-stack">
           <p style={{ margin: 0 }}>
-            This booking is less than {tenant.rules.guestChangeCutoffHours} hours away, so it can’t be changed online.
+            This booking is less than {cfg.rules.guestChangeCutoffHours} hours away, so it can’t be changed online.
             Contact @{tenant.instagram} on Instagram.
           </p>
           <a className="vb-btn vb-btn-center vb-label" href={contact} target="_blank" rel="noopener noreferrer">
@@ -151,7 +153,7 @@ export function ManageBooking({ initial, token }: { initial: GuestBooking; token
             Cancel booking
           </button>
           <p className="vb-label" style={{ margin: 0 }}>
-            Changes online up to {tenant.rules.guestChangeCutoffHours} hours before.
+            Changes online up to {cfg.rules.guestChangeCutoffHours} hours before.
           </p>
         </section>
       )}
