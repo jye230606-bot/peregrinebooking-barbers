@@ -77,3 +77,11 @@ test("every message has a plain-text version", () => {
     assert.doesNotMatch(m.text, /<(table|td|p|a|div|h1)\b/);
   }
 });
+
+test("Cloudflare sending is used only where the Worker says so", async () => {
+  const { cloudflareMailer, mailerFromEnv, parseAddress } = await import("../src/booking/server/email.ts");
+  assert.equal(cloudflareMailer({ BOOKING_FROM_EMAIL: "V Barbers <bookings@x.space>" }), null);
+  assert.ok(cloudflareMailer({ EMAIL_PROVIDER: "cloudflare", BOOKING_FROM_EMAIL: "V Barbers <bookings@x.space>" }));
+  assert.equal(mailerFromEnv({}), null);
+  assert.deepEqual(parseAddress("V Barbers <bookings@x.space>"), { email: "bookings@x.space", name: "V Barbers" });
+});

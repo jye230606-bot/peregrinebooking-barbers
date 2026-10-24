@@ -6,7 +6,7 @@ import { dateLabel, shopDateKey, timeLabel, weekdayName, weekdayOf } from '../ti
 import { bookingIcs } from '../ics.ts'
 
 /**
- * Booking emails over Resend: the guest's confirmation (with the manage link
+ * Booking emails, over Cloudflare Email Service on Workers or Resend elsewhere: the guest's confirmation (with the manage link
  * and an .ics), an alert to Vance, and notices when a booking is moved or
  * cancelled. All optional — with RESEND_API_KEY unset, each message is logged
  * and the booking stands. A failed send is logged, never surfaced.
@@ -55,6 +55,50 @@ export function resendMailer(env: NodeJS.ProcessEnv = process.env, fetcher: type
       if (!res.ok) throw new Error(`Resend returned ${res.status}: ${await res.text()}`)
     },
   }
+}
+
+/**
+ * Cloudflare Email Service, through the Worker's EMAIL binding. Only on
+ * Workers, where EMAIL_PROVIDER=cloudflare is set; the binding needs no key.
+ */
+export function cloudflareMailer(env: NodeJS.ProcessEnv = process.env): Mailer | null {
+  const from = env.BOOKING_FROM_EMAIL
+  if (env.EMAIL_PROVIDER !== 'cloudflare' || !from) return null
+  const sender = parseAddress(from)
+  return {
+    async send({ to, subject, text, html, replyTo, attachments }) {
+      const { env: bindings } = await import('cloudflare:workers')
+      await bindings.EMAIL.send({
+        from: sender,
+        to,
+        subject,
+        text,
+        html,
+        ...(replyTo ? { replyTo } : {}),
+        ...(attachments
+          ? {
+              attachments: attachments.map((a) => ({
+                filename: a.filename,
+                content: Buffer.from(a.content).toString('base64'),
+                type: a.contentType,
+                disposition: 'attachment' as const,
+              })),
+            }
+          : {}),
+      })
+    },
+  }
+}
+
+/** Cloudflare on Workers, otherwise Resend; null when neither is configured. */
+export function mailerFromEnv(env: NodeJS.ProcessEnv = process.env): Mailer | null {
+  return cloudflareMailer(env) ?? resendMailer(env)
+}
+
+/** "V Barbers <bookings@x.space>" → { email, name }; a bare address stays bare. */
+export function parseAddress(from: string): { email: string; name?: string } {
+  const m = from.match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>\s*$/)
+  return m ? { email: m[2].trim(), ...(m[1].trim() ? { name: m[1].trim() } : {}) } : { email: from.trim() }
 }
 
 export type BookingEvent = 'created' | 'rescheduled' | 'cancelled-by-guest' | 'cancelled-by-owner'

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { tenant, type TenantConfig } from '../../config/tenant.ts'
 import { withSchedule } from '../schedule.ts'
-import { resendMailer, type Mailer } from './email.ts'
+import { mailerFromEnv, type Mailer } from './email.ts'
 import { fileStore } from './fileStore.ts'
 import { supabaseStore } from './supabaseStore.ts'
 import type { BookingStore } from './store.ts'
@@ -14,7 +14,7 @@ import type { BookingStore } from './store.ts'
 
 export type Config = {
   store: BookingStore
-  /** Null until RESEND_API_KEY and BOOKING_FROM_EMAIL are set; bookings still work. */
+  /** Null until a provider and BOOKING_FROM_EMAIL are set; bookings still work. */
   mailer: Mailer | null
   ownerEmail?: string
   /** Absolute origin for links in emails; falls back to the request's own. */
@@ -63,7 +63,7 @@ export function config(): Config {
   const env = process.env
   cached = {
     store: storeFromEnv(env),
-    mailer: resendMailer(env),
+    mailer: mailerFromEnv(env),
     ownerEmail: env.OWNER_EMAIL || undefined,
     siteUrl: env.SITE_URL || undefined,
   }
