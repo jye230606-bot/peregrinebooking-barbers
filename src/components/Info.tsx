@@ -76,7 +76,7 @@ export function Info() {
         </p>
         <p className="vb-powered">
           Powered by{" "}
-          <a href="https://www.peregrinepartners.space" target="_blank" rel="noopener">
+          <a href="https://www.peregrineoffice.space" target="_blank" rel="noopener">
             PeregrineOffice
           </a>
         </p>

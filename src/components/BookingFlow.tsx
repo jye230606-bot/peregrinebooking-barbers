@@ -158,7 +158,7 @@ export function BookingFlow({ initialServiceId, onDone }: { initialServiceId?: s
             <dt>Where</dt>
             <dd>In your confirmation email</dd>
             <dt>Pay</dt>
-            <dd>PayID or cash, on the day</dd>
+            <dd>Card or cash, on the day</dd>
           </dl>
           <a className="vb-btn vb-btn-primary vb-btn-center" href={created.icsUrl} style={{ marginTop: "var(--gap)" }}>
             Add to calendar

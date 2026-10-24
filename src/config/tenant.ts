@@ -63,7 +63,7 @@ export const tenant: TenantConfig = {
   instagram: 'vbarbersz',
   booksy: 'vbarbersz',
   booksyName: 'vbarbersz',
-  payment: 'Pay by PayID or cash at your appointment.',
+  payment: 'Pay by card or cash at your appointment.',
 
   services: [
     { id: '74cdb172-7b61-5260-9f17-9e6d24c2e17d', name: 'Haircut', durationMin: 45, priceCents: 5000 },

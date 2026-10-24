@@ -98,7 +98,7 @@ test("a guest books, gets a manage link, and the diary keeps only the token's ha
   assert.equal(toGuest.to, "kai@example.com");
   assert.ok(toGuest.text.includes(res.body.manageUrl));
   assert.ok(toGuest.text.includes("41 Flowerdale Road"));
-  assert.ok(toGuest.text.includes("PayID or cash"));
+  assert.ok(toGuest.text.includes("card or cash"));
   assert.equal(toGuest.attachments[0].contentType, "text/calendar");
   assert.equal(toOwner.to, "vance@example.com");
   assert.ok(toOwner.text.includes("+61412345678"));

@@ -34,7 +34,7 @@ const [guest, owner] = messagesFor("created", booking, opts);
 test("the client's confirmation reads like a booking app's", () => {
   assert.equal(guest.subject, "You're booked: Haircut, Wed 21 Oct at 10:45");
   assert.match(guest.html, /You&#39;re booked in/);
-  for (const bit of ["Haircut", "Wednesday 21 October", "10:45 – 11:30", "Vance", "$50", "41 Flowerdale Road, Hampton East VIC 3188", "PayID"]) {
+  for (const bit of ["Haircut", "Wednesday 21 October", "10:45 – 11:30", "Vance", "$50", "41 Flowerdale Road, Hampton East VIC 3188", "card or cash"]) {
     assert.ok(guest.html.includes(bit), bit);
   }
   assert.match(guest.html, /href="https:\/\/vbarbers\.peregrinepartners\.space\/booking\/1\?t=abc"[^>]*>Change or cancel/);
@@ -60,7 +60,7 @@ test("Vance's alert is a card he can act on", () => {
   assert.match(owner.html, /href="tel:\+61412345678"/);
   assert.match(owner.html, /href="mailto:kai@example\.com"/);
   assert.match(owner.html, /Skin fade please/);
-  assert.match(owner.html, /href="https:\/\/www\.peregrinepartners\.space\/console\/shop\/vbarbers\?date=2026-10-21"[^>]*>Open calendar/);
+  assert.match(owner.html, /href="https:\/\/www\.peregrineoffice\.space\/console\/shop\/vbarbers\?date=2026-10-21"[^>]*>Open calendar/);
   assert.match(owner.text, /Kai <script>/);
 });
 

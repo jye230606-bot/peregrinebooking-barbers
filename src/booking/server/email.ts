@@ -135,7 +135,7 @@ ${l.intro ? `<p style="margin:0 0 8px;font:15px/1.55 ${FONT};color:${C.ink}">${e
 ${buttons ? `<tr><td style="padding:16px 28px 6px">${buttons}</td></tr>` : ''}
 ${l.note ? `<tr><td style="padding:6px 28px 24px;font:13px/1.5 ${FONT};color:${C.muted}">${esc(l.note)}</td></tr>` : '<tr><td style="height:18px"></td></tr>'}
 <tr><td style="padding:20px 28px;border-top:1px solid ${C.line};font:12px/1.6 ${FONT};color:${C.muted}">
-${esc(l.shop.name)} · ${esc(fullAddress(l.shop))}<br><a href="${ig}" style="color:${C.muted}">@${esc(l.shop.instagram)}</a> on Instagram<br>Powered by <a href="https://www.peregrinepartners.space" style="color:${C.muted}">PeregrineOffice</a>
+${esc(l.shop.name)} · ${esc(fullAddress(l.shop))}<br><a href="${ig}" style="color:${C.muted}">@${esc(l.shop.instagram)}</a> on Instagram<br>Powered by <a href="https://www.peregrineoffice.space" style="color:${C.muted}">PeregrineOffice</a>
 </td></tr>
 </table></td></tr></table></body></html>`
 }
@@ -174,7 +174,7 @@ export function messagesFor(
   const replyTo = ownerTo || undefined
   const site = (opts.siteUrl ?? (opts.manageUrl ? new URL(opts.manageUrl).origin : process.env.SITE_URL ?? '')).replace(/\/$/, '')
   const maps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress(cfg))}`
-  const calendar = `https://www.peregrinepartners.space/console/shop/${cfg.slug}?date=${shopDateKey(new Date(b.startsAt))}`
+  const calendar = `https://www.peregrineoffice.space/console/shop/${cfg.slug}?date=${shopDateKey(new Date(b.startsAt))}`
   const ics = { filename: `${cfg.slug.replace(/^v/, 'v-')}-booking.ics`, content: bookingIcs(b, opts.now), contentType: 'text/calendar' }
   const preheader = `${service} with ${cfg.barber}, ${longDay(b)} at ${timeLabel(b.startsAt)}`
   const details: Row[] = [
