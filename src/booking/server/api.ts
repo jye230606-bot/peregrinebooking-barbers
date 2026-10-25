@@ -392,7 +392,12 @@ export async function handle(req: ApiRequest, config: Config): Promise<ApiRespon
         const ctx = await contextAround(store, new Date(block.startsAt), new Date())
         const violation = checkBlock(block, ctx.bookings)
         if (violation) return fail(409, violation.message, violation.code)
-        await store.insertBlock(block)
+        try {
+          await store.insertBlock(block)
+        } catch (e) {
+          if (e instanceof SlotTaken) return fail(409, TAKEN_MESSAGE, 'taken')
+          throw e
+        }
         return json(201, block)
       })
     }

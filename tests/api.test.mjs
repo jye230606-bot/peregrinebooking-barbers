@@ -8,6 +8,7 @@ import { handle } from "../src/booking/server/api.ts";
 import { fileStore } from "../src/booking/server/fileStore.ts";
 import { hashPassword } from "../src/booking/server/auth.ts";
 import { at } from "../src/booking/time.ts";
+import { SlotTaken } from "../src/booking/server/store.ts";
 
 /**
  * The API end to end against a real file store in a temp directory, with the
@@ -273,6 +274,16 @@ test("the owner sees the diary, cancels, blocks time and books by hand", async (
 
   assert.equal((await handle(req("DELETE", `/owner/blocks/${block.body.id}`, { body: {}, cookie }), config)).status, 200);
   assert.equal((await book("13:00", { email: "x@example.com" })).status, 201);
+});
+
+test("a booking winning the race against a block returns a clean conflict", async () => {
+  const cookie = await signIn();
+  config.store.insertBlock = async () => { throw new SlotTaken(); };
+  const result = await handle(req("POST", "/owner/blocks", {
+    cookie, body: { date: TUESDAY, from: "13:00", to: "14:00" },
+  }), config);
+  assert.equal(result.status, 409);
+  assert.equal(result.body.code, "taken");
 });
 
 test("a schedule change is enforced on the next booking", async (t) => {
