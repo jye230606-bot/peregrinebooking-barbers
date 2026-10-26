@@ -20,15 +20,16 @@ export default async function Home() {
   const cfg = await tenantConfig(config().store);
   return (
     <TenantProvider value={cfg}>
-      <Intro />
-      <TopBar />
-      <main id="booking">
-        <Hero />
-        <Profile />
-        <Reviews />
-        <Info />
-      </main>
-      <BookingSheet />
+      <Intro>
+        <TopBar />
+        <main id="booking">
+          <Hero />
+          <Profile />
+          <Reviews />
+          <Info />
+        </main>
+        <BookingSheet />
+      </Intro>
     </TenantProvider>
   );
 }

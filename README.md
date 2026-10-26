@@ -8,13 +8,28 @@ manages the same diary through Peregrine Office.
 
 | Purpose | URL |
 | --- | --- |
-| Customer bookings | https://vbarbers.peregrinepartners.space/ |
+| Customer bookings | https://vbarbers.peregrineoffice.space/ |
 | Vance's diary | https://www.peregrineoffice.space/console/shop/vbarbers |
+| Design review (bookings disabled) | https://vbarbers-design-review-20261026.peregrine-office.workers.dev/ |
 
 The booking site's `/owner` route redirects to Office. Vance uses his Office
 account; the old standalone owner password screen is retired.
 
-## Session handoff — 25 October 2026
+The customer address moved to `vbarbers.peregrineoffice.space` on 26 October
+2026. The earlier `vbarbers.peregrinepartners.space` address remains available
+for existing links. New booking emails use the Office booking address.
+
+## Session handoff — 26 October 2026
+
+The Office booking domain and clipper removal are live. The blue preface and
+bottom-up transition are available at the design review link above, with
+booking submissions disabled. Next step: collect Vance's feedback before
+publishing the transition to the real booking site.
+
+See the [session handoff](docs/session-handoff-2026-10-26.md) for release IDs,
+verification, source state and durable preview recovery files.
+
+## Previous handoff — 25 October 2026
 
 Performance and booking-safety fixes are live. Core checks pass; final owner
 acceptance and inbox delivery still need a live booking cycle with Vance.

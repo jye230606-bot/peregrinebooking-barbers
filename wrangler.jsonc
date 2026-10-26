@@ -11,7 +11,10 @@
     "not_found_handling": "none",
     "run_worker_first": ["/*", "!/_next/static/*", "!/*/_next/static/*"]
   },
-  "routes": [{ "pattern": "vbarbers.peregrinepartners.space/*", "zone_name": "peregrinepartners.space" }],
+  "routes": [
+    { "pattern": "vbarbers.peregrineoffice.space", "custom_domain": true },
+    { "pattern": "vbarbers.peregrinepartners.space/*", "zone_name": "peregrinepartners.space" }
+  ],
   "send_email": [{ "name": "EMAIL" }],
   "observability": { "enabled": true },
   "vars": {
@@ -20,7 +23,7 @@
     "STORE": "supabase",
     "SUPABASE_URL": "https://pzljcmcnthzklaurzxpa.supabase.co",
     "TENANT_SLUG": "vbarbers",
-    "SITE_URL": "https://vbarbers.peregrinepartners.space",
+    "SITE_URL": "https://vbarbers.peregrineoffice.space",
     "OWNER_EMAIL": "Vance.christo@icloud.com"
   }
 }

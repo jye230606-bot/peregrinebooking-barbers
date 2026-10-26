@@ -1,0 +1,137 @@
+--- a/wrangler.jsonc
++++ b/wrangler.jsonc
+@@ -3 +3 @@
+-  "name": "vbarbers",
++  "name": "vbarbers-design-review-20261026",
+@@ -7 +7,3 @@
+-  "compatibility_flags": ["nodejs_compat"],
++  "compatibility_flags": [
++    "nodejs_compat"
++  ],
+@@ -12 +14,5 @@
+-    "run_worker_first": ["/*", "!/_next/static/*", "!/*/_next/static/*"]
++    "run_worker_first": [
++      "/*",
++      "!/_next/static/*",
++      "!/*/_next/static/*"
++    ]
+@@ -14,6 +20,4 @@
+-  "routes": [
+-    { "pattern": "vbarbers.peregrineoffice.space", "custom_domain": true },
+-    { "pattern": "vbarbers.peregrinepartners.space/*", "zone_name": "peregrinepartners.space" }
+-  ],
+-  "send_email": [{ "name": "EMAIL" }],
+-  "observability": { "enabled": true },
++  "routes": [],
++  "observability": {
++    "enabled": true
++  },
+@@ -21,8 +25,6 @@
+-    "EMAIL_PROVIDER": "cloudflare",
+-    "BOOKING_FROM_EMAIL": "V Barbers <bookings@peregrinepartners.space>",
+-    "STORE": "supabase",
+-    "SUPABASE_URL": "https://pzljcmcnthzklaurzxpa.supabase.co",
+-    "TENANT_SLUG": "vbarbers",
+-    "SITE_URL": "https://vbarbers.peregrineoffice.space",
+-    "OWNER_EMAIL": "Vance.christo@icloud.com"
+-  }
++    "STORE": "file",
++    "STORE_FILE": "/tmp/vbarbers-review.json",
++    "TENANT_SLUG": "vbarbers"
++  },
++  "workers_dev": true,
++  "preview_urls": false
+--- a/src/booking/server/fileStore.ts
++++ b/src/booking/server/fileStore.ts
+@@ -0,0 +1,2 @@
++import reviewSchedule from '../../config/review-schedule.json'
++import type { Schedule } from '../schedule.ts'
+@@ -96 +98 @@
+-    loadSchedule: async () => null,
++    loadSchedule: async () => reviewSchedule as Schedule,
+--- a/src/app/api/booking/[...route]/route.ts
++++ b/src/app/api/booking/[...route]/route.ts
+@@ -16,0 +17,11 @@
++
++  // Review copy: no bookings, changes, owner writes or emails.
++  if (request.method !== "GET" && request.method !== "HEAD") {
++    return Response.json({ error: "This is a design preview. Booking submissions are disabled.", code: "preview" }, { status: 403 });
++  }
++  if (route.length === 1 && route[0] === "availability") {
++    const url = new URL("/api/booking/availability", "https://vbarbers.peregrineoffice.space");
++    url.search = request.nextUrl.search;
++    return fetch(url, { headers: { Accept: "application/json" } });
++  }
++
+--- /dev/null
++++ b/src/config/review-schedule.json
+@@ -0,0 +1,69 @@
++{
++  "services": [
++    {
++      "id": "74cdb172-7b61-5260-9f17-9e6d24c2e17d",
++      "name": "Haircut",
++      "durationMin": 45,
++      "priceCents": 5000
++    },
++    {
++      "id": "25ff47d7-538d-59d3-85ae-02c77364f6c2",
++      "name": "Haircut + beard",
++      "durationMin": 60,
++      "priceCents": 6000
++    }
++  ],
++  "weeklyHours": [
++    null,
++    null,
++    [
++      "10:00",
++      "18:15"
++    ],
++    [
++      "10:00",
++      "18:15"
++    ],
++    [
++      "10:00",
++      "18:15"
++    ],
++    [
++      "10:00",
++      "18:15"
++    ],
++    [
++      "11:00",
++      "18:00"
++    ]
++  ],
++  "overrides": [
++    {
++      "date": "2026-11-05",
++      "closed": true
++    },
++    {
++      "date": "2026-11-06",
++      "closed": true
++    },
++    {
++      "date": "2026-11-07",
++      "closed": true
++    },
++    {
++      "date": "2026-11-08",
++      "closed": true
++    },
++    {
++      "date": "2026-11-09",
++      "closed": true
++    }
++  ],
++  "rules": {
++    "slotMinutes": 45,
++    "bufferMinutes": 0,
++    "minNoticeMinutes": 120,
++    "maxAdvanceDays": 21,
++    "guestChangeCutoffHours": 12
++  }
++}

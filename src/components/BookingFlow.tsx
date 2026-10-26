@@ -71,9 +71,9 @@ export function BookingFlow({ initialServiceId, onDone }: { initialServiceId?: s
     if (startsAt && free && !free.includes(startsAt)) setStartsAt(null);
   }, [free, startsAt]);
 
-  // Wait a frame for the step to mount, then glide to it.
+  // Wait a frame for the step to mount, then glide below the page header.
   const reveal = (ref: React.RefObject<HTMLDivElement | null>) =>
-    requestAnimationFrame(() => requestAnimationFrame(() => scrollToEl(ref.current, 24)));
+    requestAnimationFrame(() => requestAnimationFrame(() => scrollToEl(ref.current, 112)));
 
   function chooseService(id: string) {
     setServiceId(id);
