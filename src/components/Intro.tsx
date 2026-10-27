@@ -40,9 +40,9 @@ export function Intro({ children }: { children: React.ReactNode }) {
       if (finished.current) return;
       announceIntroDone();
       setPhase("slide");
-    }, 600);
+    }, 1200);
     // Also release the page if styles or an animation-end event are unavailable.
-    const fallback = window.setTimeout(finish, 1400);
+    const fallback = window.setTimeout(finish, 2000);
     return () => {
       window.clearTimeout(start);
       window.clearTimeout(fallback);

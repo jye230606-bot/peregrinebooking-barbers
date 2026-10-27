@@ -118,8 +118,10 @@ test("Back releases the page even when the exit animation event never arrives", 
   assert.equal(bookingOpen(), true, "one tap must reopen it");
 });
 
-test("the visible landing page accepts taps while the intro slides away", async () => {
+test("the intro holds for the longer opening before releasing the landing page for the slide", async () => {
   await render(h(Intro, null, h("main", { id: "booking" }, h(BookButton))));
+  await act(() => delay(650));
+  assert.equal(container.querySelector(".vb-entry").dataset.phase, "hold", "the logo must remain after the old 600ms hold");
   await act(() => delay(650));
   assert.equal(container.querySelector(".vb-entry").dataset.phase, "slide");
   assert.equal(document.getElementById("booking").hasAttribute("inert"), false, "the visible booking button must not remain inert");

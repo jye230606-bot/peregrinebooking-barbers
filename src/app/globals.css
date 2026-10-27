@@ -929,6 +929,8 @@ html.js .vb-hero:not([data-go]) .vb-hero-enter {
   position: relative;
   display: grid;
   place-items: center;
+  opacity: 1;
+  transition: opacity var(--dur-fast) var(--ease-out);
 }
 
 .vb-trim-btn {
@@ -1336,6 +1338,11 @@ html.js:not([data-intro="seen"]) .vb-entry[data-phase="slide"] .vb-entry-page {
 /* Show booking targets only after they stop moving under the visitor's finger. */
 html.js:not([data-intro="seen"]) .vb-entry:not([data-phase="done"]) a[href="#book"] {
   visibility: hidden;
+}
+
+/* Fade the complete booking control in once its target is stable. */
+html.js:not([data-intro="seen"]) .vb-entry:not([data-phase="done"]) .vb-trim-lane {
+  opacity: 0;
 }
 
 @keyframes vb-entry-up {
