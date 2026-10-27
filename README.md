@@ -21,6 +21,11 @@ for existing links. New booking emails use the Office booking address.
 
 ## Mobile booking fix — 28 October 2026
 
+The initial fix did not resolve the user's report. The
+[overlay follow-up](docs/booking-overlay-follow-up-2026-10-28.md) restores the
+working reference's React overlay mechanism while retaining the current design,
+with explicit opening commands and 74 passing tests.
+
 The mobile booking controls now retain a first tap while the booking view
 loads. Intro interaction and scroll locking, modal close recovery, and
 availability retry handling have been corrected. The production fix passed

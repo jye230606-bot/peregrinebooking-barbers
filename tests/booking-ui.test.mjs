@@ -29,8 +29,8 @@ beforeEach(() => {
   document.documentElement.style.cssText = "";
   dom.sessionStorage.clear();
   dom.history.replaceState(null, "", "/");
-  container = document.getElementById("test-root");
-  root = createRoot(container);
+  container = document.body;
+  root = createRoot(document.getElementById("test-root"));
 });
 afterEach(async () => {
   await act(() => root.unmount());
@@ -44,17 +44,63 @@ const click = async (node) => act(async () => {
   await delay(0);
 });
 
+const bookingOpen = () => {
+  const modal = container.querySelector('[role="dialog"], dialog');
+  return modal?.tagName === "DIALOG" ? modal.open : modal?.getAttribute("aria-modal") === "true";
+};
+
 test("a first booking tap is retained when the sheet mounts later", async () => {
   await render(view(false));
   await click(container.querySelector(".vb-pill"));
   await render(view());
-  assert.equal(container.querySelector("dialog")?.open, true, "the first tap must open the booking view without a second tap");
+  assert.equal(bookingOpen(), true, "the first tap must open the booking view without a second tap");
 });
 
 test("a booking link followed before hydration opens when the sheet mounts", async () => {
   dom.history.replaceState(null, "", "/#book");
   await render(view());
-  assert.equal(container.querySelector("dialog")?.open, true);
+  assert.equal(bookingOpen(), true);
+});
+
+test("a booking tap opens directly when the URL is already #book and hashchange is unavailable", async (t) => {
+  const intercept = (event) => event.stopImmediatePropagation();
+  dom.addEventListener("hashchange", intercept, true);
+  t.after(() => dom.removeEventListener("hashchange", intercept, true));
+  await render(view());
+  // A restored or router-managed URL may change without native hashchange.
+  dom.history.replaceState(dom.history.state, "", "/#book");
+  await click(container.querySelector(".vb-pill"));
+  assert.equal(bookingOpen(), true, "the current URL must not turn the booking control into a dead link");
+});
+
+test("booking remains visible when native dialog presentation is unavailable", async (t) => {
+  t.mock.method(dom.HTMLDialogElement.prototype, "showModal", () => {});
+  await render(view());
+  await click(container.querySelector(".vb-pill"));
+  assert.equal(bookingOpen(), true, "booking visibility must not depend on native dialog state");
+});
+
+test("the booking overlay escapes the animated landing page and retains keyboard focus", async () => {
+  dom.sessionStorage.setItem("vb:intro", "1");
+  await render(h(TenantProvider, { value: tenant }, h(Intro, null,
+    h("main", { id: "booking" }, h(BookButton)), h(BookingSheet))));
+  await click(container.querySelector(".vb-pill"));
+  const modal = container.querySelector('[role="dialog"]');
+  assert.equal(modal?.parentElement === document.body, true, "the landing transform must not contain the overlay");
+  const background = container.querySelector(".vb-entry");
+  assert.equal(background.hasAttribute("inert"), true);
+  const controls = modal.querySelectorAll("button");
+  const first = controls[0];
+  const last = controls[controls.length - 1];
+  last.focus();
+  await act(() => dom.dispatchEvent(new dom.KeyboardEvent("keydown", { key: "Tab", cancelable: true })));
+  assert.equal(document.activeElement === first, true);
+  await act(() => dom.dispatchEvent(new dom.KeyboardEvent("keydown", { key: "Tab", shiftKey: true, cancelable: true })));
+  assert.equal(document.activeElement === last, true);
+  await act(() => dom.dispatchEvent(new dom.KeyboardEvent("keydown", { key: "Escape", cancelable: true })));
+  await act(() => delay(550));
+  assert.equal(bookingOpen(), false);
+  assert.equal(background.hasAttribute("inert"), false);
 });
 
 test("Back releases the page even when the exit animation event never arrives", async () => {
@@ -62,14 +108,14 @@ test("Back releases the page even when the exit animation event never arrives", 
   const trigger = container.querySelector(".vb-pill");
   trigger.focus();
   await click(trigger);
-  assert.equal(container.querySelector("dialog")?.open, true);
+  assert.equal(bookingOpen(), true);
   await click(container.querySelector(".vb-sheet-back"));
   await act(() => delay(550));
-  assert.equal(container.querySelector("dialog"), null);
+  assert.equal(bookingOpen(), false);
   assert.equal(document.documentElement.style.overflow, "");
   assert.equal(document.activeElement, trigger);
   await click(trigger);
-  assert.equal(container.querySelector("dialog")?.open, true, "one tap must reopen it");
+  assert.equal(bookingOpen(), true, "one tap must reopen it");
 });
 
 test("the visible landing page accepts taps while the intro slides away", async () => {
@@ -93,7 +139,7 @@ test("opening during the intro keeps the modal locked and restores scrolling on 
   await render(h(TenantProvider, { value: tenant }, h(Intro, null,
     h("main", { id: "booking" }, h(BookButton)), h(BookingSheet))));
   await act(() => delay(650));
-  assert.equal(container.querySelector("dialog")?.open, true);
+  assert.equal(bookingOpen(), true);
   assert.equal(document.documentElement.style.overflow, "hidden", "the intro must not release the modal's scroll lock");
   await click(container.querySelector(".vb-sheet-back"));
   await act(() => delay(550));

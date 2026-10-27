@@ -7,6 +7,7 @@ import { money } from "./client-api";
 import { openDays } from "./copy";
 import { useTenant } from "./TenantContext";
 import { Mark } from "./Mark";
+import { onBookingClick } from "./BookingSheet";
 import { scrollToEl, useIntroDone, useScrollVar, WordsReveal } from "./Motion";
 
 /**
@@ -162,7 +163,7 @@ function HeroBooking() {
       <div className="vb-trim-lane">
         <span className="vb-trim-halo" aria-hidden="true" />
         <span className="vb-trim-edge" aria-hidden="true" />
-        <a className="vb-trim-btn" href="#book">
+        <a className="vb-trim-btn" href="#book" onClick={onBookingClick}>
           <span className="vb-trim-label">Make a Booking</span>
           <span className="vb-trim-arrow" aria-hidden="true">
             <svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

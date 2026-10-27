@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { onBookingClick } from "./BookingSheet";
 
 /** The small client-side buttons the server-rendered profile needs. */
 
@@ -34,7 +35,7 @@ export function ShareButton({ title }: { title: string }) {
 /** Opens the booking sheet. */
 export function BookButton({ className = "vb-pill" }: { className?: string }) {
   return (
-    <a className={className} href="#book">
+    <a className={className} href="#book" onClick={onBookingClick}>
       Make a booking <span aria-hidden="true">→</span>
     </a>
   );
