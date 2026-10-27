@@ -1,5 +1,10 @@
 # Session handoff — 26 October 2026
 
+**Superseded status:** Vance approved the design and it was published to the
+live Office subdomain on 27 October. Start with the
+[production release record](release-2026-10-27.md). The pending-publication
+instructions below describe the earlier review state.
+
 ## Resume here
 
 Wait for Vance's feedback on the public design review before making further

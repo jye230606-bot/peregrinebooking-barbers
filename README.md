@@ -19,12 +19,20 @@ The customer address moved to `vbarbers.peregrineoffice.space` on 26 October
 2026. The earlier `vbarbers.peregrinepartners.space` address remains available
 for existing links. New booking emails use the Office booking address.
 
-## Session handoff — 26 October 2026
+## Approved release — 27 October 2026
+
+Vance approved the design. The blue preface, bottom-up page transitions and
+original rounded booking controls are now live on the Office booking address.
+Production bookings are enabled. The separate review link still has submissions
+disabled. See the [release record](docs/release-2026-10-27.md) for verification
+and production/previous version IDs.
+
+## Historical handoff — 26 October 2026
 
 The Office booking domain and clipper removal are live. The blue preface and
-bottom-up transition are available at the design review link above, with
-booking submissions disabled. Next step: collect Vance's feedback before
-publishing the transition to the real booking site.
+bottom-up transition were initially published at the design review link, with
+booking submissions disabled there. That review was subsequently approved and
+released to production on 27 October; see the release record above.
 
 See the [session handoff](docs/session-handoff-2026-10-26.md) for release IDs,
 verification, source state and durable preview recovery files.
