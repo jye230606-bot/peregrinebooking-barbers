@@ -31,7 +31,7 @@ export function Intro({ children }: { children: React.ReactNode }) {
         // With storage blocked, the intro can play again on a later visit.
       }
     }
-    if (seen.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (seen.current || window.location.hash.split("?")[0] === "#book" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       finish();
       return;
     }
@@ -50,16 +50,23 @@ export function Intro({ children }: { children: React.ReactNode }) {
   }, [finish]);
 
   useEffect(() => {
-    if (!active) return;
+    // Once the landing page starts to appear, its visible controls must work.
+    if (phase !== "hold") return;
     const page = document.getElementById("booking");
-    const previousOverflow = document.documentElement.style.overflow;
     page?.setAttribute("inert", "");
-    document.documentElement.style.overflow = "hidden";
     return () => {
       page?.removeAttribute("inert");
-      document.documentElement.style.overflow = previousOverflow;
     };
-  }, [active]);
+  }, [phase]);
+
+  useEffect(() => {
+    if (!active) return;
+    const onBooking = () => {
+      if (window.location.hash.split("?")[0] === "#book") finish();
+    };
+    window.addEventListener("hashchange", onBooking);
+    return () => window.removeEventListener("hashchange", onBooking);
+  }, [active, finish]);
 
   return (
     <div className="vb-entry" data-phase={phase}>

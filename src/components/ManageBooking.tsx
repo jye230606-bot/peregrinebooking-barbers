@@ -27,6 +27,7 @@ export function ManageBooking({ initial, token, address }: { initial: GuestBooki
   const [date, setDate] = useState<DateKey | null>(null);
   const [startsAt, setStartsAt] = useState<string | null>(null);
   const [free, setFree] = useState<string[] | null>(null);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
   const [refresh, setRefresh] = useState(0);
 
   const service = serviceById(booking.serviceId, cfg);
@@ -40,8 +41,11 @@ export function ManageBooking({ initial, token, address }: { initial: GuestBooki
     if (mode !== "move" || !date || !service) return;
     let live = true;
     setFree(null);
+    setAvailabilityError(null);
     api<{ starts: string[] }>(`/availability?date=${date}&service=${service.id}`).then((res) => {
-      if (live) setFree(res.ok ? res.data.starts : []);
+      if (!live) return;
+      setFree(res.ok ? res.data.starts : []);
+      if (!res.ok) setAvailabilityError(res.error);
     });
     return () => {
       live = false;
@@ -184,7 +188,14 @@ export function ManageBooking({ initial, token, address }: { initial: GuestBooki
           </Step>
           {date && (
             <Step n="02" label={`New time · ${dateLabel(date)}`} id="move-time">
-              <TimeGrid date={date} service={service} now={now} free={free} value={startsAt} onChange={setStartsAt} />
+              {availabilityError ? (
+                <div className="vb-stack">
+                  <p className="vb-notice" role="alert" style={{ margin: 0 }}>{availabilityError}</p>
+                  <button type="button" className="vb-btn vb-btn-center" onClick={() => setRefresh((n) => n + 1)}>Retry times</button>
+                </div>
+              ) : (
+                <TimeGrid date={date} service={service} now={now} free={free} value={startsAt} onChange={setStartsAt} />
+              )}
             </Step>
           )}
           <section className="vb-block vb-stack">

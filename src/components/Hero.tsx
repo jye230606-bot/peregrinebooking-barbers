@@ -7,7 +7,6 @@ import { money } from "./client-api";
 import { openDays } from "./copy";
 import { useTenant } from "./TenantContext";
 import { Mark } from "./Mark";
-import { openBooking } from "./BookingSheet";
 import { scrollToEl, useIntroDone, useScrollVar, WordsReveal } from "./Motion";
 
 /**
@@ -163,14 +162,14 @@ function HeroBooking() {
       <div className="vb-trim-lane">
         <span className="vb-trim-halo" aria-hidden="true" />
         <span className="vb-trim-edge" aria-hidden="true" />
-        <button type="button" className="vb-trim-btn" onClick={() => openBooking()}>
+        <a className="vb-trim-btn" href="#book">
           <span className="vb-trim-label">Make a Booking</span>
           <span className="vb-trim-arrow" aria-hidden="true">
             <svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 10h12M11 5l5 5-5 5" />
             </svg>
           </span>
-        </button>
+        </a>
       </div>
       <p className="vb-trim-sub">
         {cfg.services.length} services from {money(Math.min(...cfg.services.map((s) => s.priceCents)))} · {openDays("short", cfg)}

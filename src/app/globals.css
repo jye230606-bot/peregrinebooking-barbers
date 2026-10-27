@@ -947,6 +947,7 @@ html.js .vb-hero:not([data-go]) .vb-hero-enter {
   font-weight: var(--weight-display);
   letter-spacing: var(--track-tight);
   cursor: pointer;
+  touch-action: manipulation;
   transition: transform var(--dur-slow) var(--ease-spring);
 }
 
@@ -987,6 +988,13 @@ html.js .vb-hero:not([data-go]) .vb-hero-enter {
 
 .vb-trim-btn:active {
   transform: scale(0.96);
+}
+
+/* Keep the finger's target still between touch-down and touch-up. */
+@media (hover: none) {
+  .vb-trim-btn:active {
+    transform: none;
+  }
 }
 
 .vb-trim-btn:focus-visible {
@@ -1280,6 +1288,12 @@ html:not(.js) .vb-trim-halo {
 .vb-entry-page {
   position: relative;
   background: var(--c-bg);
+}
+
+/* Contain the preface locally; the booking dialog owns the page scroll lock. */
+html.js:not([data-intro="seen"]) .vb-entry[data-phase="hold"] {
+  height: 100svh;
+  overflow: hidden;
 }
 
 .vb-intro {

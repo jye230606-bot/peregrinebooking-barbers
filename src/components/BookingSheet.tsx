@@ -6,17 +6,21 @@ import { Mark } from "./Mark";
 import { area, tenant } from "@/config/tenant";
 
 /**
- * Local motion prototype: booking rises as a full page over the landing page,
+ * Booking rises as a full page over the landing page,
  * with the original rounded controls, palette and typography.
  *
- * Opened from anywhere with `openBooking(serviceId?)`. Back and Escape reverse
- * the transition. A native dialog keeps focus inside until the exit finishes.
+ * Native #book links preserve opening intent even before React hydrates.
+ * Back and Escape reverse the transition. A native dialog keeps focus inside
+ * until the exit finishes.
  */
 
-const EVENT = "vb:book";
+function bookingRequest() {
+  const [name, query] = window.location.hash.split("?");
+  return name === "#book" ? { serviceId: new URLSearchParams(query).get("service") ?? undefined } : null;
+}
 
 export function openBooking(serviceId?: string) {
-  window.dispatchEvent(new CustomEvent(EVENT, { detail: { serviceId } }));
+  window.location.hash = serviceId ? `book?service=${encodeURIComponent(serviceId)}` : "book";
 }
 
 type State = "closed" | "open" | "closing";
@@ -31,20 +35,36 @@ export function BookingSheet() {
   const active = state !== "closed";
 
   const close = useCallback(() => {
+    if (bookingRequest()) {
+      window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    }
     setState((s) => (s === "open" ? "closing" : s));
   }, []);
 
   useEffect(() => {
-    const onOpen = (e: Event) => {
-      const id = (e as CustomEvent<{ serviceId?: string }>).detail?.serviceId;
+    const sync = () => {
+      const request = bookingRequest();
+      if (!request) {
+        setState((s) => (s === "open" ? "closing" : s));
+        return;
+      }
+      if (state === "open") return; // repeated taps must not reset the form
       returnFocus.current = document.activeElement as HTMLElement | null;
-      setServiceId(id);
+      setServiceId(request.serviceId);
       setSession((n) => n + 1); // a fresh flow each time it opens
       setState("open");
     };
-    window.addEventListener(EVENT, onOpen);
-    return () => window.removeEventListener(EVENT, onOpen);
-  }, []);
+    window.addEventListener("hashchange", sync);
+    sync(); // includes a link tapped before this component mounted
+    return () => window.removeEventListener("hashchange", sync);
+  }, [state]);
+
+  // A backgrounded phone or disabled animation may never send animationend.
+  useEffect(() => {
+    if (state !== "closing") return;
+    const fallback = window.setTimeout(() => setState("closed"), 450);
+    return () => window.clearTimeout(fallback);
+  }, [state]);
 
   useEffect(() => {
     if (!active) return;
@@ -55,7 +75,7 @@ export function BookingSheet() {
     const previousPadding = html.style.paddingRight;
     html.style.overflow = "hidden";
     html.style.paddingRight = `${scrollbar}px`;
-    modal?.showModal();
+    if (modal && !modal.open) modal.showModal();
     panel.current?.focus({ preventScroll: true });
     return () => {
       modal?.close();

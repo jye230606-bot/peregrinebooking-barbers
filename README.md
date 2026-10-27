@@ -19,7 +19,17 @@ The customer address moved to `vbarbers.peregrineoffice.space` on 26 October
 2026. The earlier `vbarbers.peregrinepartners.space` address remains available
 for existing links. New booking emails use the Office booking address.
 
-## Approved release — 27 October 2026
+## Mobile booking fix — 28 October 2026
+
+The mobile booking controls now retain a first tap while the booking view
+loads. Intro interaction and scroll locking, modal close recovery, and
+availability retry handling have been corrected. The production fix passed
+71 tests and browser checks at 320, 390 and 430 px widths. Dependency security
+patches are included; npm audit reports zero known vulnerabilities. Physical
+phone and inbox acceptance remain unverified. See the
+[mobile audit and release record](docs/mobile-booking-audit-2026-10-28.md).
+
+## Approved design release — 27 October 2026
 
 Vance approved the design. The blue preface, bottom-up page transitions and
 original rounded booking controls are now live on the Office booking address.

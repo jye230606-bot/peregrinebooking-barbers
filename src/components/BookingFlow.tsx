@@ -28,6 +28,7 @@ export function BookingFlow({ initialServiceId, onDone }: { initialServiceId?: s
   const [date, setDate] = useState<DateKey | null>(null);
   const [startsAt, setStartsAt] = useState<string | null>(null);
   const [free, setFree] = useState<string[] | null>(null);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
   const [timeError, setTimeError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -53,12 +54,13 @@ export function BookingFlow({ initialServiceId, onDone }: { initialServiceId?: s
     if (!service || !date) return;
     let live = true;
     setFree(null);
+    setAvailabilityError(null);
     api<{ starts: string[] }>(`/availability?date=${date}&service=${service.id}`).then((res) => {
       if (!live) return;
       if (res.ok) setFree(res.data.starts);
       else {
         setFree([]);
-        setTimeError(res.error);
+        setAvailabilityError(res.error);
       }
     });
     return () => {
@@ -218,7 +220,14 @@ export function BookingFlow({ initialServiceId, onDone }: { initialServiceId?: s
                 {timeError}
               </p>
             )}
-            <TimeGrid key={`${date}-${service.id}-${refresh}`} date={date} service={service} now={now} free={free} value={startsAt} onChange={chooseTime} />
+            {availabilityError ? (
+              <div className="vb-stack">
+                <p className="vb-notice" role="alert" style={{ margin: 0 }}>{availabilityError}</p>
+                <button type="button" className="vb-btn vb-btn-center" onClick={() => setRefresh((n) => n + 1)}>Retry times</button>
+              </div>
+            ) : (
+              <TimeGrid key={`${date}-${service.id}-${refresh}`} date={date} service={service} now={now} free={free} value={startsAt} onChange={chooseTime} />
+            )}
           </Step>
         </div>
       )}
